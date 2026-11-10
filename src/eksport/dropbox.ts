@@ -3,7 +3,7 @@
 import { db } from '../db/db';
 
 /** App-nøkkel fra Dropbox-appen «Scandic Befaring» (offentlig verdi, ikke en hemmelighet). */
-export const DROPBOX_APP_KEY = 'SETT_INN_APP_NOKKEL';
+export const DROPBOX_APP_KEY = 'jxq8r6gxl0luapq';
 /** Mappen befaringene lagres i. */
 export const DROPBOX_ROT = '/Scandic Markiser/Befaringer';
 
