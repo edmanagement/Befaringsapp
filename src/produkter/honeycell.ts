@@ -1,7 +1,7 @@
 // Honeycell / Plissé  (eBest: Interiør > Plissegardiner)
 import type { K, Produkt } from '../motor/typer';
 import { antall, valg } from './felles';
-import { v, profilfarge3, underlag5 } from '../valglister/felles';
+import { v, underlag5 } from '../valglister/felles';
 import { honeycellDuker, plisseDuker, plissetyperFlere, plissetyperHurtig } from '../valglister/honeycell';
 import { plissetypeGrenser, plissetypeVarsler } from '../grenser/plissetyper';
 import { honeycellBredde, ingenRegel } from '../regler/regler';
@@ -33,7 +33,7 @@ export const honeycell: Produkt = {
   id: 'honeycell',
   navn: 'Honeycell / Plissé',
   kategori: 'Interiør',
-  versjon: 1,
+  versjon: 2,
   ebestSti: 'Interiør > Plissegardiner',
   antallFelt: 'antall',
   steg: [
@@ -88,7 +88,7 @@ export const honeycell: Produkt = {
     {
       id: 'skra_lengde',
       ledetekst: 'Lengde skrå side (C)',
-      ebestFelt: 'Lengde skrå side (C)',
+      merknadEksport: 'Ikke eget felt i eBest – legg i kommentar.',
       type: 'maal',
       maaltype: 'brutto',
       hjelp: 'Kun ved skråvindu. Mål den skrå siden øverst. Bruttomål, ingen fratrekk.',
@@ -101,7 +101,7 @@ export const honeycell: Produkt = {
           ? [`${t}: skråprofil ${String(c).replace('.', ',')} cm – maks 200 cm ved 60°, 220 cm ved 30°.`] : [];
       },
     },
-    valg('profilfarge', 'Profilfarge', profilfarge3),
+    valg('profilfarge', 'Profilfarge', v('HVIT', 'GRÅ', 'SORT')),
     {
       id: 'duk',
       ledetekst: 'Duktype',
@@ -128,7 +128,7 @@ export const honeycell: Produkt = {
       plassering: 'standardvalg',
       standard: 210,
     },
-    valg('snorlengde', 'Snorlengde', v('Standard', 'Spesial'), { plassering: 'standardvalg', standard: 'Standard', vis: erSnortype }),
+    valg('snorlengde', 'Snorlengde', v('Standard', 'Spesial ►'), { plassering: 'standardvalg', standard: 'Standard', vis: erSnortype }),
     {
       id: 'snorlengde_cm',
       ledetekst: 'Snorlengde, egen lengde',
@@ -136,7 +136,7 @@ export const honeycell: Produkt = {
       type: 'tall',
       enhet: 'cm',
       plassering: 'standardvalg',
-      vis: (k) => erSnortype(k) && k.verdi('snorlengde') === 'Spesial',
+      vis: (k) => erSnortype(k) && k.verdi('snorlengde') === 'Spesial ►',
     },
   ],
 };

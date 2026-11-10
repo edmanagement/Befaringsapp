@@ -33,11 +33,11 @@ describe('Screen i motoren', () => {
   });
   it('standardvalg: Skrå kassett, men Rett når imove er valgt', () => {
     expect(lagKontekst(screenV550, post({}, {})).gjeldende('kassett_type')).toMatchObject({ verdi: 'Skrå', kilde: 'standard' });
-    const p = post({ motor: valgt('Solcellemotor imove – sort panel') }, {});
+    const p = post({ motor: valgt('iMove solar sort panel') }, {});
     expect(lagKontekst(screenV550, p).gjeldende('kassett_type')).toMatchObject({ verdi: 'Rett', kilde: 'automatisk' });
   });
   it('fjernkontroll-valg følger motor', () => {
-    const k = lagKontekst(screenV550, post({ motor: valgt('Solcellemotor imove – hvitt panel'), bryter_fjernkontroll: valgt('Smoove Origin IO') }, {}));
+    const k = lagKontekst(screenV550, post({ motor: valgt('iMove solar hvit panel'), bryter_fjernkontroll: valgt('Smoove Origin IO') }, {}));
     // Smoove er ikke gyldig for imove → nullstilles
     expect(k.verdi('bryter_fjernkontroll')).toBeNull();
   });
@@ -48,10 +48,10 @@ describe('Screen i motoren', () => {
     expect(m).not.toContain('stromkabel');
   });
   it('imove skjuler strømkabel, kabellengde og støpsel', () => {
-    const m = mangler(screenV550, post({ motor: valgt('Solcellemotor imove – hvitt panel') }, {})).map((s) => s.id);
+    const m = mangler(screenV550, post({ motor: valgt('iMove solar hvit panel') }, {})).map((s) => s.id);
     expect(m).not.toContain('kabellengde');
     expect(m).not.toContain('stopsel');
-    const k = lagKontekst(screenV550, post({ motor: valgt('Solcellemotor imove – hvitt panel') }, {}));
+    const k = lagKontekst(screenV550, post({ motor: valgt('iMove solar hvit panel') }, {}));
     expect(screenV550.steg.filter((s) => ['stromkabel', 'kabellengde', 'stopsel'].includes(s.id)).every((s) => !s.vis!(k))).toBe(true);
   });
   it('varsel over maks for størrelse', () => {
@@ -59,9 +59,9 @@ describe('Screen i motoren', () => {
     expect(v.some((x) => x.tekst.includes('over maks for XS'))).toBe(true);
   });
   it('screenduk eksporteres med bare nummeret', () => {
-    const p = post({ screenduk: valgt({ kolleksjon: '3 %', nummer: '19.1106' }) }, {});
+    const p = post({ screenduk: valgt({ kolleksjon: '3%', nummer: '19.1106' }) }, {});
     const k = lagKontekst(screenV550, p);
-    expect(ebestTekst(screenV550.steg.find((s) => s.id === 'screenduk')!, k)).toBe('19.1106');
+    expect(ebestTekst(screenV550.steg.find((s) => s.id === 'screenduk')!, k)).toBe('19.1106-3%');
   });
 });
 
@@ -73,7 +73,7 @@ describe('Honeycell i motoren', () => {
   it('duk-teksten har kolleksjon foran nummer', () => {
     const p = post({ prisgruppe: valgt('1'), duk: valgt({ kolleksjon: 'MISTRAL', nummer: '7410' }) }, {});
     const k = lagKontekst(honeycell, p);
-    expect(ebestTekst(honeycell.steg.find((s) => s.id === 'duk')!, k)).toBe('MISTRAL 7410');
+    expect(ebestTekst(honeycell.steg.find((s) => s.id === 'duk')!, k)).toBe('MISTRAL - 7410');
   });
   it('regulering og snorlengde bare for P17xx', () => {
     const uten = mangler(honeycell, post({ plissetype: valgt('P1600') }, {})).map((s) => s.id);

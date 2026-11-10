@@ -52,16 +52,16 @@ describe('Etappe 2 i motoren', () => {
     const p = finn('scandic-50');
     const k = lagKontekst(p, post(p.id, {}, { bredde: maal(120) }));
     expect(k.bestilt('bredde')).toBe(130);
-    expect(k.gjeldende('sammenkobling')).toMatchObject({ verdi: 'Nei, frittstående', kilde: 'standard' });
+    expect(k.gjeldende('sammenkobling')).toMatchObject({ verdi: 'Nei, Frittstående', kilde: 'standard' });
   });
   it('Scandic 50: undervalg følger betjening', () => {
     const p = finn('scandic-50');
-    const io = mangler(p, post(p.id, { betjening: valgt('Persiennemotor IO 10 m²') })).map((s) => s.id);
-    expect(io).toEqual(expect.arrayContaining(['fjernkontroll', 'kabel']));
-    expect(io).not.toContain('linelengde');
-    const line = mangler(p, post(p.id, { betjening: valgt('Rundragsline (maks 3 m²)') })).map((s) => s.id);
-    expect(line).toContain('linelengde');
-    expect(line).not.toContain('kabel');
+    const io = lagKontekst(p, post(p.id, { betjening: valgt('Persiennemotor IO 10m²') }));
+    expect(valgListe(p.steg.find((s) => s.id === 'betjening2') as never, io)).toContain('Situo IO Pure fjernkontroll scroll');
+    expect(io.gjeldende('kabel')).toMatchObject({ verdi: 'Standard - 3m hvit med koblet hirschmann', kilde: 'standard' });
+    const line = lagKontekst(p, post(p.id, { betjening: valgt('Rundragsline (max. 3m²)') }));
+    expect(valgListe(p.steg.find((s) => s.id === 'betjening2') as never, line)).toContain('Lengde 400cm');
+    expect(valgListe(p.steg.find((s) => s.id === 'regulering') as never, line)).not.toContain('Standard regulering, Midten');
   });
   it('lamellgardin: høyde etter gulv/karm', () => {
     const p = finn('lamellgardin');
@@ -71,8 +71,9 @@ describe('Etappe 2 i motoren', () => {
   it('lamellgardin: skrålamell gir bruttomål A–D og vinkel', () => {
     const p = finn('lamellgardin');
     const m = mangler(p, post(p.id, { skralamell: valgt('Ja, fra V ► H') })).map((s) => s.id);
-    expect(m).toEqual(expect.arrayContaining(['skra_a', 'skra_b', 'skra_c', 'skra_d', 'skra_vinkel']));
-    expect(mangler(p, post(p.id)).map((s) => s.id)).not.toContain('skra_a');
+    expect(m).toEqual(expect.arrayContaining(['skra_c', 'skra_d']));
+    expect(m).not.toContain('skra_a');
+    expect(mangler(p, post(p.id)).map((s) => s.id)).not.toContain('skra_c');
   });
   it('Zipscreen Mini: lysåpning avkrysset som standard (−1)', () => {
     const p = finn('zipscreen-mini');
@@ -84,7 +85,7 @@ describe('Etappe 2 i motoren', () => {
     expect(m).toContain('spesialfarge');
     expect(m).not.toContain('dukfarge');
     const k = lagKontekst(p, post(p.id, { modell: valgt('Trendline') }));
-    expect(valgListe(p.steg.find((s) => s.id === 'feste') as never, k)).toContain('Tak skrått');
+    expect(valgListe(p.steg.find((s) => s.id === 'feste') as never, k)).toContain('Tak, skrått');
   });
   it('vindusmarkise: +20, vannrett +10, armlengde og motorvarsel', () => {
     const p = finn('vindusmarkise');
@@ -101,5 +102,51 @@ describe('Etappe 2 i motoren', () => {
     const k2 = lagKontekst(p, post(p.id, {}, { bredde: maal(179.5), hoyde: maal(200, {}, 203.0) }));
     expect(s.varsler!(k2).join(' ')).toContain('3,2 m²');
     expect(s.varsler!(lagKontekst(p, post(p.id, {}, { bredde: maal(119.5) })))).toEqual([]);
+  });
+});
+
+describe('eBest-data (10.11.2026)', () => {
+  const vl = (id: string, steg: string, svar: Record<string, Svar> = {}) => {
+    const p = finn(id);
+    return valgListe(p.steg.find((s) => s.id === steg) as never, lagKontekst(p, post(p.id, svar)));
+  };
+  it('lamell: skrå gir ingen fratrekk, hver side fjerner føringsstav', () => {
+    const p = finn('lamellgardin');
+    const k = lagKontekst(p, post(p.id, { skralamell: valgt('Ja, fra V ► H'), hoyde_til: valgt('Til gulv') }, { bredde: maal(150), hoyde: maal(200) }));
+    expect(k.bestilt('bredde')).toBe(150);
+    expect(k.bestilt('hoyde')).toBe(200);
+    expect(vl('lamellgardin', 'betjening', { parkering: valgt('Hver side') })).not.toContain('Føringsstav ►');
+  });
+  it('lamell: farge eksporteres som «BERLIN C BO - 5100»', () => {
+    const p = finn('lamellgardin');
+    const k = lagKontekst(p, post(p.id, { prisgruppe: valgt('2'), farge_lamell: valgt({ kolleksjon: 'BERLIN C BO', nummer: '5100' }) }));
+    expect(byggPost(post(p.id, { prisgruppe: valgt('2'), farge_lamell: valgt({ kolleksjon: 'BERLIN C BO', nummer: '5100' }) }), 1)
+      .felt.find((f) => f.id === 'farge_lamell')?.ebest_tekst).toBe('BERLIN C BO - 5100');
+    expect(k.verdi('prisgruppe')).toBe('2');
+  });
+  it('Verano: «72.1322 - BASIC - BO PLUS», og undervalg etter motor', () => {
+    const pp = post('rullegardin', { prisgruppe: valgt('2'), duk: valgt({ kolleksjon: 'BASIC - BO PLUS', nummer: '72.1322' }) });
+    expect(byggPost(pp, 1).felt.find((f) => f.id === 'duk')?.ebest_tekst).toBe('72.1322 - BASIC - BO PLUS');
+    expect(vl('rullegardin', 'betjening2', { betjening: valgt('Sonesse 2 ultra 30 Zigbee Li-Ion') })).toContain('Ysia 5 Zigbee');
+    expect(vl('rullegardin', 'betjening', { modell: valgt('Verano large') })).toContain('Somfy Sonesse 40 WT 230V');
+  });
+  it('V550: kabellengde følger motor, iMove har egne fjernkontroller', () => {
+    expect(vl('screen-v550', 'kabellengde', { motor: valgt('Somfy LS 40 Short') })).not.toContain('Standard 2,5m Hvit');
+    expect(vl('screen-v550', 'kabellengde', { motor: valgt('Somfy Sunilus 50 io') })).toContain('Standard 5m hvit');
+    expect(vl('screen-v550', 'bryter_fjernkontroll', { motor: valgt('iMove solar hvit panel') })).toContain('iMove 15 kanalers fjernkontroll');
+  });
+  it('terrasse: Eolis bare med Sunilus, Premium har ikke tak', () => {
+    expect(vl('terrassemarkise', 'vindsikring', { modell: valgt('Premium'), betjening: valgt('Somfy Sunilus io 30/17') })).toContain('Ja, Eolis 3D sensor io');
+    expect(vl('terrassemarkise', 'vindsikring', { modell: valgt('Premium'), betjening: valgt('Standard m/ sveiv') })).not.toContain('Ja, Eolis 3D sensor io');
+    const p = finn('terrassemarkise');
+    expect(erSynlig(p.steg.find((s) => s.id === 'tak')!, lagKontekst(p, post(p.id, { modell: valgt('Premium') })))).toBe(false);
+  });
+  it('Scandic 80: skinnefarge følger lamellfarge', () => {
+    expect(vl('scandic-80', 'skinnefarge', { lamellfarge: valgt('0717') })).toEqual(['BRUN', 'RAL ►']);
+    expect(vl('scandic-80', 'skinnefarge', { lamellfarge: valgt('7016') })).toEqual(['ANTRASITT']);
+  });
+  it('garasjeport: glatte modeller har flere farger', () => {
+    expect(vl('garasjeport', 'farge', { modell: valgt('GS Slick') })).toContain('Standard - Sort 9005');
+    expect(vl('garasjeport', 'farge', { modell: valgt('GS Flush') })).not.toContain('Standard - Sort 9005');
   });
 });

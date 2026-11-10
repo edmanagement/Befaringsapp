@@ -3,7 +3,7 @@ import type { K, Produkt } from '../motor/typer';
 import { antall, etasjeOgLift, valg } from './felles';
 import { v, underlag4 } from '../valglister/felles';
 import {
-  bryterValg, fjernkontrollImove, fjernkontrollIo, kabellengde, kassettfarge,
+  RAL, bryterValg, fjernkontrollImove, fjernkontrollIo, kabellengdeFor, kassettfarge,
   motorerBryter, motorerEbest, motorerImove, motorerIo, screenduk,
 } from '../valglister/screen';
 import {
@@ -28,7 +28,7 @@ export const screenV550: Produkt = {
   id: 'screen-v550',
   navn: 'Screen (Zipscreen V550)',
   kategori: 'Eksteriør',
-  versjon: 1,
+  versjon: 2,
   ebestSti: 'Eksteriør > Screen > Motorstyrt > Verano V550',
   antallFelt: 'antall',
   steg: [
@@ -87,13 +87,12 @@ export const screenV550: Produkt = {
       ledetekst: 'RAL-nummer for kassett',
       ebestFelt: 'Kassettfarge (RAL)',
       type: 'tekst',
-      vis: (k) => k.verdi('kassettfarge') === 'RAL (egen)',
+      vis: (k) => k.verdi('kassettfarge') === RAL,
     },
     valg('motor', 'Betjening (motor)', v(...motorerEbest, ...motorerImove), {
       ebestFelt: 'Betjening',
-      standard: 'Maestria+ 50 io',
-      hjelp: 'Solcellemotor imove står ikke i eBest-listen for V550, og krever rett kassett.',
-      varsler: (k) => (erImove(k) ? ['imove: står ikke i eBest-listen for V550 – må legges inn manuelt / i kommentar.'] : []),
+      standard: 'Somfy Maestria+ 50 io',
+      hjelp: 'iMove solcellemotor krever rett kassett (kassett settes til Rett).',
     }),
     valg('bryter_fjernkontroll', 'Bryter / fjernkontroll', [], {
       valg: (k) =>
@@ -101,8 +100,8 @@ export const screenV550: Produkt = {
     }),
     valg('regulering', 'Regulering (side)', v('Høyre', 'Venstre')),
     // Solcellemotor (imove) har ikke strømkabel – disse skjules da.
-    valg('stromkabel', 'Strømkabel (uttak)', v('Bak', 'Over', 'På siden'), { standard: 'På siden', vis: (k) => !erImove(k) }),
-    valg('kabellengde', 'Kabellengde', kabellengde, { vis: (k) => !erImove(k) }),
+    valg('stromkabel', 'Kabel (uttak)', v('Bak', 'Over', 'På siden'), { standard: 'På siden', vis: (k) => !erImove(k) }),
+    valg('kabellengde', 'Kabellengde', [], { valg: (k) => kabellengdeFor(motor(k)), vis: (k) => !erImove(k) }),
     valg('stopsel', 'Støpsel', v('Nei', 'Ja'), { vis: (k) => !erImove(k) }),
     valg('utbygging', 'Utbygging', v('Utbyggingsben', 'Hylser', 'Nei')),
     {

@@ -12,7 +12,7 @@ const b: Befaring = {
 const p: Post = {
   id: 'p1', befaringId: 'b1', rekkefolge: 1, kategori: 'Eksteriør', produktId: 'screen-v550', navn: 'Stue vest',
   bildeIder: ['x', 'y'], bildeHoppetOver: false,
-  svar: { storrelse: { verdi: 'V550 M', kilde: 'valgt' }, bunnlist: { verdi: 'Small', kilde: 'valgt' }, motor: { verdi: 'Solcellemotor imove – sort panel', kilde: 'valgt' } },
+  svar: { storrelse: { verdi: 'V550 M', kilde: 'valgt' }, bunnlist: { verdi: 'Small', kilde: 'valgt' }, motor: { verdi: 'iMove solar sort panel', kilde: 'valgt' } },
   maal: { bredde: { maalt_cm: 330, avkryssinger: { sideskinner: true }, manuelt_cm: null }, hoyde: { maalt_cm: 200, avkryssinger: { kassett: true }, manuelt_cm: null } },
   kommentar: 'Husk stige', skjerm: 'ferdig', historikk: [], retur: null, modus: 'ny', ferdig: false, opprettet: 0, endret: 0,
 };

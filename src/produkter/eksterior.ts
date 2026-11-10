@@ -17,12 +17,12 @@ const over = (navn: string, cm: number | null, maks: number) =>
 const under = (navn: string, cm: number | null, min: number) =>
   cm !== null && cm < min ? [`${navn} ${cmTekst(cm)} cm er under min (${min} cm).`] : [];
 const s = (k: K, id: string) => String(k.verdi(id) ?? '');
-const heleCm = (navn: string, cm: number | null) =>
+export const heleCm = (navn: string, cm: number | null) =>
   cm !== null && !Number.isInteger(cm) ? [`${navn} ${cmTekst(cm)} cm – eBest tar hele cm.`] : [];
 
 // ---------- Markiseduk (felles for terrasse-, vindus- og fasademarkise) ----------
 const erSpesialDuk = (k: K) => k.verdi('duktype') === 'Spesial';
-const markiseDukSteg = (): Steg[] => [
+export const markiseDukSteg = (): Steg[] => [
   valg('duktype', 'Duktype', M.duktype, { standard: 'Standard' }),
   {
     id: 'dukfarge', ledetekst: 'Dukfarge', ebestFelt: 'Dukfarge', type: 'duk',
@@ -41,7 +41,7 @@ export const zipscreenMini: Produkt = {
   id: 'zipscreen-mini',
   navn: 'Zipscreen Mini (manuell)',
   kategori: 'Eksteriør',
-  versjon: 2,
+  versjon: 3,
   ebestSti: 'Eksteriør > Screen > Manuell > Zipscreen Mini',
   antallFelt: 'antall',
   steg: [
@@ -61,10 +61,10 @@ export const zipscreenMini: Produkt = {
     },
     {
       id: 'screenduk', ledetekst: 'Screenduk (3 %)', ebestFelt: 'Screenduk', type: 'duk',
-      grupper: () => [{ navn: '3 %', numre: ['19.1106', '19.1111', '19.1202', '19.1204', '19.1303', '19.1304', '19.1305'], navnIEbest: false }],
+      grupper: () => [{ navn: '3%', numre: ['19.1106', '19.1111', '19.1202', '19.1204', '19.1303', '19.1304', '19.1305'], navnIEbest: false, ebestMal: '{n}-{k}' }],
     },
-    valg('kassettfarge', 'Kassettfarge', v('RAL (egen)', '9010 Hvit', 'VS905 Strukturert sort')),
-    { id: 'kassettfarge_ral', ledetekst: 'RAL-nummer for kassett', ebestFelt: 'Kassettfarge (RAL)', type: 'tekst', vis: (k) => k.verdi('kassettfarge') === 'RAL (egen)' },
+    valg('kassettfarge', 'Kassettfarge', v('RAL ►', '9010 - Hvit', 'VS905 - Strukturert sort')),
+    { id: 'kassettfarge_ral', ledetekst: 'RAL-nummer for kassett', ebestFelt: 'Kassettfarge (RAL)', type: 'tekst', vis: (k) => k.verdi('kassettfarge') === 'RAL ►' },
     valg('utbygging', 'Utbygging', v('Nei', '10 mm hylser', '15 mm hylser', '20 mm hylser')),
     {
       id: 'utbygging_eget_lager', ledetekst: 'Utbygging fra eget lager?', type: 'avkryssing', standard: false,
@@ -82,20 +82,22 @@ export const zipscreenMini: Produkt = {
 
 // ---------- Terrassemarkise ----------
 const modell = (k: K) => s(k, 'modell');
-const motorTerrasse = (k: K) => s(k, 'betjening') !== '' && s(k, 'betjening') !== 'Standard m/ sveiv';
+const motorTerrasse = (k: K) => s(k, 'betjening') !== '' && s(k, 'betjening') !== M.TERRASSE_SVEIV;
+const pluss = (k: K) => M.erPremiumPluss(modell(k)) || M.erTrendline(modell(k));
 
 export const terrassemarkise: Produkt = {
   id: 'terrassemarkise',
   navn: 'Terrassemarkise',
   kategori: 'Eksteriør',
-  versjon: 2,
+  versjon: 3,
   ebestSti: 'Eksteriør > Terrassemarkiser',
   antallFelt: 'antall',
   steg: [
     valg('modell', 'Modell', v(...M.terrasseModellHurtig, ...M.terrasseModellFlere), { hurtig: M.terrasseModellHurtig }),
     valg('stativfarge', 'Stativfarge', [], {
-      valg: (k) => (M.erPremium(modell(k)) ? M.stativfargePremium : M.erTrendline(modell(k)) ? M.stativfargeTrendline : []),
-      hjelp: 'Verano kassettmarkiser: stativfargene er ikke lagt inn ennå – skriv selv.',
+      valg: (k) => (M.erPremium(modell(k)) ? M.stativfargePremium
+        : modell(k) === 'Trendline cross-over' ? M.stativfargeTrendlineCross : M.stativfargeTrendline),
+      hjelp: 'Kassettmarkiser (Ipanema, Santander, Palermo) ligger som eget produkt.',
     }),
     { id: 'stativfarge_ral', ledetekst: 'RAL-nummer for stativ', ebestFelt: 'Stativfarge (RAL)', type: 'tekst', vis: (k) => k.verdi('stativfarge') === 'Valgfri RAL' },
     antall(),
@@ -106,28 +108,32 @@ export const terrassemarkise: Produkt = {
     },
     valg('utfall', 'Utfall', M.utfall, { hjelp: 'Hvilke utfall som er mulig avhenger av bredden – eBest avgjør.' }),
     ...markiseDukSteg(),
-    valg('nedfellbar_front', 'Nedfellbar front', v('Nei', 'Ja')),
-    valg('front_dukfarge', 'Dukfarge front', [], {
+    valg('nedfellbar_front', 'Nedfellbar', v('Nei', 'Ja'), { vis: pluss, hjelp: 'Premium har ikke nedfellbar front.' }),
+    valg('front_dukfarge', 'Nedfellbar duk', [], {
+      ebestFelt: 'NedfellbarDuk',
       valg: (k) => (M.erTrendline(modell(k)) ? M.frontTrendline : M.frontPremium),
-      vis: (k) => k.verdi('nedfellbar_front') === 'Ja',
+      vis: (k) => pluss(k) && k.verdi('nedfellbar_front') === 'Ja',
     }),
     valg('betjening', 'Betjening', M.terrasseBetjening),
-    valg('sveivlengde', 'Sveivlengde', M.sveivlengde, { vis: (k) => k.verdi('betjening') === 'Standard m/ sveiv' }),
-    valg('fjernkontroll', 'Fjernkontroll', M.fjernkontrollIo, { vis: (k) => s(k, 'betjening').includes('Sunilus') }),
-    valg('bryter', 'Bryter', M.bryterValg, { vis: (k) => s(k, 'betjening').includes('LT50') }),
-    valg('stromkabel', 'Strømkabel', M.motorkabel, { vis: motorTerrasse }),
+    valg('betjening2', 'Sveiv / fjernkontroll / bryter', [], {
+      ebestFelt: 'Betjening2', valg: (k) => M.markiseUndervalg(s(k, 'betjening')),
+    }),
+    valg('stromkabel', 'Kabel', [], {
+      ebestFelt: 'Kabel', vis: motorTerrasse,
+      valg: (k) => (M.erTrendline(modell(k)) ? M.motorkabelTrendline : M.motorkabelPremium),
+    }),
+    valg('vindsikring', 'Vindsikring', [], { valg: (k) => M.vindsikring(modell(k), s(k, 'betjening')), standard: 'Nei' }),
     valg('regulering', 'Regulering (side)', v('Høyre', 'Venstre')),
-    valg('tak', 'Tak', v('Nei', 'Ja')),
-    { id: 'tak_lengde', ledetekst: 'Tak – lengde', ebestFelt: 'Tak lengde', type: 'tall', enhet: 'cm', vis: (k) => k.verdi('tak') === 'Ja' },
+    valg('tak', 'Tak', v('Nei', 'Ja'), { vis: pluss, hjelp: 'Premium har ikke tak.' }),
+    { id: 'tak_lengde', ledetekst: 'Tak – lengde', ebestFelt: 'Tak lengde', type: 'tall', enhet: 'cm', vis: (k) => pluss(k) && k.verdi('tak') === 'Ja' },
     valg('tak_farge', 'Tak – farge', [], {
+      ebestFelt: 'TakFarge',
       valg: (k) => (M.erTrendline(modell(k)) ? M.takfargeTrendline : M.takfargePremium),
-      vis: (k) => k.verdi('tak') === 'Ja',
+      vis: (k) => pluss(k) && k.verdi('tak') === 'Ja',
     }),
     valg('hev_senk', 'Hev/Senk', v('Nei', 'Ja')),
-    // TODO: fyll inn fra eBest – valgene for vindsikring.
-    valg('vindsikring', 'Vindsikring', [], { hjelp: 'Valgene er ikke lagt inn i appen ennå – skriv selv.' }),
     { id: 'braketter', ledetekst: 'Braketter', ebestFelt: 'Braketter', type: 'tall', enhet: 'stk', heltall: true },
-    valg('feste', 'Feste', [], { valg: (k) => (M.erTrendline(modell(k)) ? v('Vegg', 'Tak rett', 'Tak skrått') : v('Vegg', 'Tak')) }),
+    valg('feste', 'Feste', [], { valg: (k) => (M.erTrendline(modell(k)) ? M.festeTrendline : v('Vegg', 'Tak')) }),
     valg('underlag', 'Underlag', underlag4),
     ...etasjeOgLift(),
   ],
@@ -162,40 +168,42 @@ function breddeUtv(o: PersienneOppsett): Steg {
   };
 }
 
-const vannbrettSteg = (dybder: ReturnType<typeof v> | null): Steg[] => [
-  valg('vannbrett', 'Vannbrett', P.vannbrett),
-  dybder
-    ? valg('vannbrett_dybde', 'Vannbrett – dybde (cm)', dybder, { ebestFelt: 'Vannbrett dybde', vis: (k) => !!k.verdi('vannbrett') && k.verdi('vannbrett') !== 'Ingen' })
-    : {
-      id: 'vannbrett_dybde', ledetekst: 'Vannbrett – dybde', ebestFelt: 'Vannbrett dybde', type: 'tall', enhet: 'cm',
-      hjelp: 'eBest har trinn på 1 cm fra 0,1 til 8,9 cm.', min: 0.1, max: 8.9,
-      vis: (k) => !!k.verdi('vannbrett') && k.verdi('vannbrett') !== 'Ingen',
-    },
+const vannbrettSteg = (dybder: ReturnType<typeof v>, medType = true): Steg[] => [
+  ...(medType ? [valg('vannbrett', 'Vannbrett', P.vannbrett)] : []),
+  valg('vannbrett_dybde', 'Vannbrett – dybde', dybder, {
+    ebestFelt: 'VannbrettDybde', vis: (k) => !medType || (!!k.verdi('vannbrett') && k.verdi('vannbrett') !== 'Ingen'),
+  }),
 ];
 
-const betjeningScandic = (): Steg[] => [
-  valg('betjening', 'Betjening', P.scandicBetjening),
-  valg('linelengde', 'Lengde rundragsline (cm)', P.linelengde, { ebestFelt: 'Lengde', vis: (k) => s(k, 'betjening').startsWith('Rundragsline') }),
-  valg('sveivlengde', 'Lengde sveiv (cm)', P.sveivlengde, { ebestFelt: 'Lengde', vis: (k) => s(k, 'betjening').startsWith('Sveiv') }),
-  valg('bryter', 'Bryter', P.persienneBryter, { vis: (k) => P.erMotor(s(k, 'betjening')) }),
-  valg('fjernkontroll', 'Fjernkontroll', P.persienneFjernkontroll, {
-    vis: (k) => P.erIoMotor(s(k, 'betjening')), hjelp: 'Scroll-varianter: skriv selv.',
-  }),
-  valg('kabel', 'Kabel (med koblet Hirschmann)', P.ioKabel, { ebestFelt: 'Kabel', vis: (k) => P.erIoMotor(s(k, 'betjening')) }),
-  valg('regulering', 'Regulering', [], {
-    valg: (k) => (P.erLineEllerSveiv(s(k, 'betjening')) ? P.reguleringScandic : P.reguleringScandic.slice(0, 3)),
-  }),
-];
+const betjeningScandic = (): Steg[] => {
+  const b = (k: K) => s(k, 'betjening');
+  const erMotor = (k: K) => P.erMotor(b(k)) || P.erIoMotor(b(k));
+  return [
+    valg('betjening', 'Betjening', P.scandicBetjening),
+    valg('betjening2', 'Lengde / bryter / fjernkontroll', [], {
+      ebestFelt: 'Betjening2',
+      valg: (k) => (P.erLine(b(k)) ? P.linelengde : P.erSveiv(b(k)) ? P.sveivlengde
+        : P.erIoMotor(b(k)) ? P.persienneFjernkontroll : P.erMotor(b(k)) ? P.persienneBryter : []),
+      vis: (k) => P.erLineEllerSveiv(b(k)) || erMotor(k),
+    }),
+    valg('kabel', 'Kabel', P.persienneKabel, { vis: erMotor, standard: 'Standard - 3m hvit med koblet hirschmann' }),
+    valg('regulering', 'Regulering', [], {
+      valg: (k) => (P.erLine(b(k)) ? P.reguleringLine : P.erSveiv(b(k)) ? P.reguleringSveiv : P.reguleringMotor),
+      vis: (k) => b(k) !== 'Ingen betjening - Kobles med annen persienne',
+    }),
+  ];
+};
 
 const sammenkoblingSteg = (): Steg[] => {
-  const ja = (k: K) => s(k, 'sammenkobling').startsWith('Ja');
+  const k_ = (k: K) => s(k, 'sammenkobling');
   return [
-    valg('sammenkobling', 'Sammenkobling', P.sammenkobling, { plassering: 'standardvalg', standard: 'Nei, frittstående' }),
-    valg('sammenkobling_type', 'Sammenkobling – rett eller ledd', P.sammenkoblingType, { plassering: 'standardvalg', vis: ja }),
-    {
-      id: 'sammenkobling_avstand', ledetekst: 'Sammenkobling – avstand', ebestFelt: 'Avstand', type: 'tall', enhet: 'cm',
-      min: 10, max: 50, plassering: 'standardvalg', vis: ja, hjelp: 'Avstand venstre/høyre, 10–50.',
-    },
+    valg('sammenkobling', 'Kobles', P.kobles, { plassering: 'standardvalg', standard: 'Nei, Frittstående' }),
+    valg('kobles_venstre', 'Kobles venstre – avstand', P.koblesAvstand, {
+      ebestFelt: 'KoblesVenstre', plassering: 'standardvalg', vis: (k) => /Venstre|Begge/.test(k_(k)),
+    }),
+    valg('kobles_hoyre', 'Kobles høyre – avstand', P.koblesAvstand, {
+      ebestFelt: 'KoblesHøyre', plassering: 'standardvalg', vis: (k) => /Høyre|Begge/.test(k_(k)),
+    }),
   ];
 };
 
@@ -207,19 +215,14 @@ const felles = (): Steg[] => [
 ];
 
 const dekkasseJa = (k: K) => k.verdi('dekkasse') === 'Ja';
-const dekkasse50Steg = (medDybde: boolean): Steg[] => [
+const dekkasse50Steg = (): Steg[] => [
   valg('dekkasse', 'Dekkasse', P.dekkasse50),
-  valg('dekkassefarge', 'Dekkassefarge', P.dekkassefarge, { vis: dekkasseJa, hjelp: 'Spesialfarge: skriv selv.' }),
-  ...(medDybde
-    ? [valg('dekkasse_dybde', 'Dekkasse – dybde', P.dekkasseDybde, {
-      plassering: 'standardvalg', vis: (k: K) => !!k.verdi('dekkasse') && k.verdi('dekkasse') !== 'Nei',
-    })]
-    : []),
+  valg('dekkassefarge', 'Dekkassefarge', P.dekkassefarge, { vis: dekkasseJa, hjelp: 'Spesialfarge (Spesial ►): skriv selv.' }),
 ];
 
 function utvPersienne(o: PersienneOppsett, ekstra: (o: PersienneOppsett) => Steg[]): Produkt {
   return {
-    id: o.id, navn: o.navn, kategori: 'Eksteriør', versjon: 2,
+    id: o.id, navn: o.navn, kategori: 'Eksteriør', versjon: 3,
     ebestSti: `Eksteriør > Persienner > ${o.id === 'scandic-80' ? '80mm' : '50mm'} > ${o.navn}`,
     antallFelt: 'antall',
     steg: [antall(), breddeUtv(o), hoydeMedTrinn(o.trinn, o.maksH), ...ekstra(o)],
@@ -230,7 +233,7 @@ export const scandic50Produkt = utvPersienne(
   { id: 'scandic-50', navn: 'Scandic 50', trinn: scandic50, minB: 30, maksB: 400, maksH: 300, minBMotor: 60 },
   () => [
     valg('lamellfarge', 'Lamellfarge', P.lamellfarge50, { hjelp: 'Spesialfarge: skriv selv.' }),
-    ...dekkasse50Steg(true),
+    ...dekkasse50Steg(),
     ...vannbrettSteg(P.vannbrettDybde50),
     ...betjeningScandic(),
     ...felles(),
@@ -241,22 +244,27 @@ export const scandic50Produkt = utvPersienne(
 export const scandic80Produkt = utvPersienne(
   { id: 'scandic-80', navn: 'Scandic 80', trinn: scandic80, minB: 50, maksB: 500, maksH: 400, minBMotor: 60 },
   () => [
-    valg('lamellfarge', 'Lamellfarge', P.lamellfarge50, { hjelp: 'Spesialfarge: skriv selv.' }),
+    valg('lamellfarge', 'Lamellfarge', P.lamellfarge80, { hjelp: 'Spesialfarge: skriv selv.' }),
     valg('dekkasse', 'Dekkasse', P.dekkasse80),
-    valg('dekkassefarge', 'Dekkassefarge', P.dekkassefarge, { vis: (k) => s(k, 'dekkasse').startsWith('Dekkasse'), hjelp: 'Spesialfarge: skriv selv.' }),
-    ...vannbrettSteg(null),
+    valg('dekkassefarge', 'Dekkassefarge', P.dekkassefarge80, { vis: (k) => s(k, 'dekkasse').startsWith('Dekkasse'), hjelp: 'RAL: skriv nummeret i kommentar.' }),
+    { id: 'dekkasse_lengde', ledetekst: 'Dekkasse – lengde', ebestFelt: 'DekkasseLengde', type: 'tall', enhet: 'cm', valgfri: true, vis: (k) => s(k, 'dekkasse').startsWith('Dekkasse') },
+    ...vannbrettSteg(P.vannbrettDybde80),
     ...betjeningScandic(),
     ...felles(),
     ...sammenkoblingSteg(),
     valg('sideskinne_venstre', 'Sideskinne venstre', P.sideskinne80, { plassering: 'standardvalg' }),
     valg('sideskinne_hoyre', 'Sideskinne høyre', P.sideskinne80, { plassering: 'standardvalg' }),
-    // TODO: fyll inn fra eBest – farger for sideskinne og bein.
-    {
-      id: 'skinnefarge', ledetekst: 'Skinnefarge', ebestFelt: 'Skinnefarge', type: 'tekst', plassering: 'standardvalg',
+    valg('skinnefarge', 'Skinnefarge', [], {
+      plassering: 'standardvalg', valg: (k) => P.skinnefarge80(s(k, 'lamellfarge')),
+      standard: (k) => P.skinnefarge80(s(k, 'lamellfarge'))[0]?.tekst,
       vis: (k) => [s(k, 'sideskinne_venstre'), s(k, 'sideskinne_hoyre')].some((x) => x === 'Enkel' || x === 'Dobbel'),
-    },
-    valg('beinlengde', 'Beinlengde', P.beinlengde80, { plassering: 'standardvalg' }),
-    { id: 'beinfarge', ledetekst: 'Beinfarge', ebestFelt: 'Beinfarge', type: 'tekst', plassering: 'standardvalg', valgfri: true },
+    }),
+    valg('beinlengde', 'Beinlengde', P.beinlengde80, { plassering: 'standardvalg', standard: 'Std 4,5cm' }),
+    valg('ekstra_beinlengde', 'Ekstra beinlengde', P.ekstraBeinlengde, { ebestFelt: 'EkstraBeinlengde', plassering: 'standardvalg', vis: (k) => k.verdi('beinlengde') === 'Std + ►' }),
+    valg('beinfarge', 'Beinfarge', [], {
+      plassering: 'standardvalg', valg: (k) => P.skinnefarge80(s(k, 'lamellfarge')),
+      standard: (k) => P.skinnefarge80(s(k, 'lamellfarge'))[0]?.tekst,
+    }),
     valg('endelokk', 'Endelokk', v('Ja', 'Nei'), { plassering: 'standardvalg' }),
   ],
 );
@@ -265,9 +273,9 @@ export const standard50Produkt = utvPersienne(
   { id: 'standard-50', navn: 'Standard 50', trinn: standard50, minB: 30, maksB: 400, maksH: 300 },
   () => [
     valg('lamellfarge', 'Lamellfarge', P.lamellfarge50, { hjelp: 'Spesialfarge: skriv selv.' }),
-    ...dekkasse50Steg(true),
-    ...vannbrettSteg(P.vannbrettDybdeStandard50),
-    valg('linelengde', 'Rundragsline, lengde (cm)', P.linelengde, { ebestFelt: 'Rundragsline, lengde' }),
+    ...dekkasse50Steg(),
+    ...vannbrettSteg(P.vannbrettDybdeStandard50, false),
+    valg('linelengde', 'Rundragsline', P.linelengdeStandard50, { ebestFelt: 'Rundragsline' }),
     valg('regulering', 'Regulering', P.reguleringStandard50),
     ...felles(),
   ],
@@ -286,7 +294,7 @@ export const continent50Produkt: Produkt = {
   id: 'continent-50',
   navn: 'Continent 50',
   kategori: 'Eksteriør',
-  versjon: 2,
+  versjon: 3,
   ebestSti: 'Eksteriør > Persienner > 50mm > Continent 50',
   antallFelt: 'antall',
   steg: [
@@ -307,8 +315,8 @@ export const continent50Produkt: Produkt = {
     valg('lamellfarge', 'Lamellfarge', P.lamellfarge50, { hjelp: 'Spesialfarge: skriv selv.' }),
     valg('dekkasse', 'Dekkasse', v('Ja', 'Nei')),
     valg('dekkassefarge', 'Dekkassefarge', P.dekkassefarge, { vis: dekkasseJa, hjelp: 'Spesialfarge: skriv selv.' }),
-    valg('sprosser', 'Sprosser', v('Ja', 'Nei')),
-    valg('vendestav', 'Vendestav (cm)', P.vendestav, { ebestFelt: 'Vendestav' }),
+    valg('sprosser', 'Dekkasse sprosser', v('Ja', 'Nei'), { ebestFelt: 'DekkasseSprosser' }),
+    valg('vendestav', 'Vendestav', P.vendestav, { ebestFelt: 'Vendestav' }),
     valg('regulering', 'Regulering', v('Høyre', 'Venstre')),
     ...felles(),
   ],
@@ -321,7 +329,7 @@ export const vindusmarkise: Produkt = {
   id: 'vindusmarkise',
   navn: 'Vindusmarkise',
   kategori: 'Eksteriør',
-  versjon: 2,
+  versjon: 3,
   ebestSti: 'Eksteriør > Vindusmarkiser',
   antallFelt: 'antall',
   steg: [
@@ -347,18 +355,17 @@ export const vindusmarkise: Produkt = {
       },
     },
     ...markiseDukSteg(),
-    valg('nisjebeslag', 'Nisjebeslag', v('Nei', 'Ja')),
-    valg('nisjebeslag_dybde', 'Nisjebeslag – dybde (mm)', M.vindusNisjeDybde, { ebestFelt: 'Nisjebeslag dybde', vis: (k) => k.verdi('nisjebeslag') === 'Ja' }),
+    valg('nisjebeslag', 'Nisjebeslag', M.vindusNisje, { standard: 'Nei' }),
     valg('sideforskyvning', 'Sideforskyvning', v('Nei', 'Ja')),
     valg('wireboks', 'Wireboks', v('Nei', 'Ja')),
     valg('betjening', 'Betjening', M.vindusBetjening),
+    valg('betjening2', 'Fjernkontroll / bryter', [], { ebestFelt: 'Betjening2', valg: (k) => M.markiseUndervalg(s(k, 'betjening')), vis: motorVindus }),
+    valg('stromkabel', 'Kabel', [], { ebestFelt: 'Kabel', valg: (k) => M.vindusKabel(s(k, 'betjening')), vis: motorVindus }),
     valg('regulering', 'Regulering (side)', v('Høyre', 'Venstre')),
-    // TODO: fyll inn fra eBest – valgene for strømkabel.
-    valg('stromkabel', 'Strømkabel', [], { vis: motorVindus, hjelp: 'Valgene er ikke lagt inn i appen ennå – skriv selv.' }),
     valg('underlag', 'Underlag', underlag4),
     { id: 'braketter', ledetekst: 'Braketter', ebestFelt: 'Braketter', type: 'tall', enhet: 'stk', heltall: true },
     ...etasjeOgLift(),
-    valg('montor', 'Montør', v('Ja', 'Selvmontering')),
+    valg('montor', 'Montering', v('Ja', 'Selvmontering'), { ebestFelt: 'Montering' }),
     valg('feste', 'Feste', v('Vegg'), { plassering: 'standardvalg', standard: 'Vegg' }),
   ],
 };
@@ -368,7 +375,7 @@ export const fasademarkise: Produkt = {
   id: 'fasademarkise',
   navn: 'Fasademarkise',
   kategori: 'Eksteriør',
-  versjon: 2,
+  versjon: 3,
   ebestSti: 'Eksteriør > Fasademarkiser',
   info: 'Skal kun brukes under tak.',
   antallFelt: 'antall',
@@ -383,13 +390,12 @@ export const fasademarkise: Produkt = {
     },
     valg('armlengde', 'Armlengde (cm)', M.armlengder, { ebestFelt: 'Armlengde (artikkel)' }),
     ...markiseDukSteg(),
-    valg('innvendig_armfeste', 'Innvendig armfeste', v('Nei', 'Ja')),
-    valg('nisjebeslag', 'Nisjebeslag', v('Nei', 'Ja')),
-    valg('nisjebeslag_dybde', 'Nisjebeslag – dybde (cm)', M.fasadeNisjeDybde, { ebestFelt: 'Nisjebeslag dybde', vis: (k) => k.verdi('nisjebeslag') === 'Ja' }),
+    valg('innvendig_armfeste', 'Armfeste', v('Nei', 'Ja'), { ebestFelt: 'Armfeste' }),
+    valg('nisjebeslag', 'Nisjebeslag', M.fasadeNisje, { standard: 'Nei' }),
     valg('betjening', 'Betjening', M.fasadeBetjening),
+    valg('betjening2', 'Sveiv / fjernkontroll / bryter', [], { ebestFelt: 'Betjening2', valg: (k) => M.markiseUndervalg(s(k, 'betjening')) }),
+    valg('stromkabel', 'Kabel', M.motorkabelPremium, { ebestFelt: 'Kabel', vis: motorVindus, standard: 'Standard kabel' }),
     valg('regulering', 'Regulering (side)', v('Høyre', 'Venstre')),
-    // TODO: fyll inn fra eBest – valgene for strømkabel.
-    valg('stromkabel', 'Strømkabel', [], { vis: motorVindus, hjelp: 'Valgene er ikke lagt inn i appen ennå – skriv selv.' }),
     valg('underlag', 'Underlag', underlag4),
     { id: 'braketter', ledetekst: 'Braketter', ebestFelt: 'Braketter', type: 'tall', enhet: 'stk', heltall: true },
     ...etasjeOgLift(),

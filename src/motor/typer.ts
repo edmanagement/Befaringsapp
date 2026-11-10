@@ -55,6 +55,8 @@ export interface DukGruppe {
   numre: string[];
   /** Om kolleksjonsnavnet skal stå foran nummeret i eBest-teksten. */
   navnIEbest: boolean;
+  /** Mal for eksakt eBest-tekst. {k} = kolleksjon, {n} = nummer. F.eks. '{k} - {n}' eller '{n} - {k}'. */
+  ebestMal?: string;
   /** Merknad, f.eks. TODO om at listen mangler. */
   merknad?: string;
 }

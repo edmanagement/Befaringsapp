@@ -197,6 +197,7 @@ export function ebestTekst(s: Steg, k: ReturnType<typeof lagKontekst>): string {
   if (typeof v === 'boolean') return v ? 'Ja' : 'Nei';
   if (erDuk(v)) {
     const g = s.type === 'duk' ? s.grupper(k).find((x) => x.navn === v.kolleksjon) : undefined;
+    if (g?.ebestMal) return g.ebestMal.replace('{k}', v.kolleksjon).replace('{n}', v.nummer);
     return g && !g.navnIEbest ? v.nummer : `${v.kolleksjon} ${v.nummer}`.trim();
   }
   if (typeof v === 'number') return String(v).replace('.', ',');

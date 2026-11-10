@@ -2,7 +2,8 @@
 // Oppdater her når eBest endres. Format: kolleksjon → fargenumre.
 import type { DukGruppe } from '../motor/typer';
 
-const g = (navn: string, numre: string[]): DukGruppe => ({ navn, numre, navnIEbest: true });
+/** eBest-tekst: «MISTRAL - 7410». */
+const g = (navn: string, numre: string[]): DukGruppe => ({ navn, numre, navnIEbest: true, ebestMal: '{k} - {n}' });
 const rekke = (fra: number, til: number, prefiks = '', pad = 0) =>
   Array.from({ length: til - fra + 1 }, (_, i) => prefiks + String(fra + i).padStart(pad, '0'));
 
@@ -11,7 +12,7 @@ export const honeycellDuker: Record<string, DukGruppe[]> = {
     g('IVREA BO', ['763-01', '763-04', '763-11', '763-13', '763-14']),
     g('MISTRAL', ['7410', '74102', '7412', '7415', '7416', '7417', '7420', '7421', '7422', '7423', '7425', '7427', '7428', '7429', '7430', '7434', '7439']),
     g('MISTRAL FULLTONE', rekke(74201, 74205)),
-    g('MISTRAL (utgått)', ['7419']),
+    g('MISTRAL(UTGÅTT)', ['7419']),
     g('MONSUN', ['7519', '7540', '7541']),
     g('PITTSBURGH', ['75007', '75009', '75010', '75011', '75012']),
     g('RIOJA', ['7720', '7725', '7727', '7728', '7729', '7730']),
@@ -20,7 +21,8 @@ export const honeycellDuker: Record<string, DukGruppe[]> = {
   '2': [
     g('BURLINGTON', ['5541', '5542', '5543']),
     g('HALIFAX', rekke(5240, 5245)),
-    g('MISTRAL BO', ['74703', '7460', '7462', '7465', '7466', '7467', '7469', '7470', '7471', '7472', '7473', '7475', '7477', '7478', '7479', '7480', '7484', '7489', '7491']),
+    { navn: 'MISTRAL - BO', numre: ['74703'], navnIEbest: true, ebestMal: '{k} {n}' },
+    g('MISTRAL BO', ['7460', '7462', '7465', '7466', '7467', '7469', '7470', '7471', '7472', '7473', '7475', '7477', '7478', '7479', '7480', '7484', '7489', '7491']),
     g('MISTRAL BO FULLTONE', ['74704', '74705', '75703', '75705']),
     g('RIOJA BO FULLTONE', ['77903']),
     g('WESTMOUNT FR', ['75501', '75510', '75511']),
@@ -44,18 +46,40 @@ export const honeycellDuker: Record<string, DukGruppe[]> = {
   '5': [g('IVREA', rekke(1, 15, '753-', 2))],
 };
 
-// TODO: fyll inn fra eBest – fargenumre per plissé-kolleksjon. Til da skrives nummeret inn som fritekst.
-const p = (navn: string): DukGruppe => ({
-  navn,
-  numre: [],
-  navnIEbest: true,
-  merknad: 'Fargenumre mangler i appen – skriv nummeret.',
-});
-
 export const plisseDuker: Record<string, DukGruppe[]> = {
-  E: ['Basel', 'Petra'].map(p),
-  '1': ['Amazon', 'Bari', 'Basel', 'Crush Pearl', 'Jaipur', 'Jakarta', 'Kaduna Pearl', 'Milano', 'Opera', 'Ordos', 'Oslo Pearl', 'Salerno', 'Sinai', 'Tigris Pearl', 'Tirari', 'Valencia', 'Venedig'].map(p),
-  '2': ['Auckland', 'Frankfurt', 'Kenzo', 'Lund BO', 'Nevada', 'New York', 'Palermo', 'Seto'].map(p),
+  E: [
+    g('BASEL', ['1200', '1213', '1215', '1216', '1217', '1218', '1220', '1230', '1239', '1243']),
+    g('PETRA', ['15201', '15202', '15203', '15207', '15208', '15209', '15210', '15211', '15212', '15219', '15220', '15222', '15225', '15227']),
+  ],
+  '1': [
+    g('AMAZON', ['2700', '2703']),
+    g('BARI', ['5450', '5453', '5454', '5457', '5459', '5461', '5463', '5467', '5468', '5471', '5472']),
+    g('BASEL', ['1200', '1213', '1215', '1217', '1218', '1220', '1230', '1239', '1243', '232']),
+    g('CRUSH PEARL', ['10449', '10450', '10453', '5174', '7004', '7081', '7100']),
+    g('JAIPUR', ['6203', '6204', '6205', '6206']),
+    g('JAKARTA', ['8451', '8455', '8460']),
+    g('KADUNA PEARL', ['8980', '8981', '8982', '8988']),
+    g('MILANO', ['7910', '7911', '7912', '7919', '7928', '7929']),
+    g('OPERA', ['10230', '10274', '10296']),
+    g('ORDOS', ['8924']),
+    g('OSLO PEARL', ['2250', '2279', '2293', '2384', '2387', '4856']),
+    g('SALERNO', ['1020', '1022', '1023', '1024', '1025', '1026', '1034', '1035']),
+    g('SINAI', ['8202', '8206', '8207', '8208']),
+    g('TIGRIS PEARL', ['1450', '1451', '1452', '1455', '1462', '1464', '1472', '1476', '1477', '1478']),
+    g('TIRARI', ['6640', '6641']),
+    g('VALENCIA', ['2730', '2731']),
+    g('VENEDIG', ['4102', '4108', '4112']),
+  ],
+  '2': [
+    g('AUCKLAND', ['9682']),
+    g('FRANKFURT', ['7000', '7002', '7003', '7010', '7099']),
+    g('KENZO', ['12', '94']),
+    g('LUND BO', ['7360', '7369', '7371', '7376', '7377', '7379', '7389', '7390']),
+    g('NEVADA', ['8900', '8902', '8903', '8905']),
+    g('NEW YORK', ['7100', '7102', '7103', '7110', '7199']),
+    g('PALERMO', ['5020', '5024', '5026', '5031', '5032', '5033', '5036']),
+    g('SETO', ['7750', '7805']),
+  ],
 };
 
 /** Plissetyper. P1740 og P1751 er med selv om de ikke dukket opp i eBest-listen for ett testmål. */

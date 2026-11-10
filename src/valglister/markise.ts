@@ -1,7 +1,7 @@
 // Markiser: terrasse-, vindus- og fasademarkise. Ordrett fra eBest (ebest-felt-og-valg.md).
 // Markisedukene har bare nummer i eBest – vises som søkbar liste.
 import type { DukGruppe } from '../motor/typer';
-import { v } from './felles';
+import { v, bryterliste, ioFjernkontroller, telisRts, sveiv3, motorkabel3 } from './felles';
 
 const standard = [
   '107', '107/515', '1078/24', '1080/5', '1081/12', '1081/151', '1081/24', '1081/305', '1081/392', '1081/7', '1081/79', '1081/84', '1081/90', '1081/92', '1081/98',
@@ -32,42 +32,84 @@ export const duktype = v('Standard', 'Lumera', 'Spesial');
 export const kappe = v('Bølget', 'Rett');
 export const kantbandFarge = v('05', '07', '08', '10', '11', '12', '14', '15', '15/1', '24', '54', '73', '75', '79', '81', '84', '87', '94', '97');
 
+/** Betjening2 for markiser, ut fra betjeningsteksten i eBest. */
+export function markiseUndervalg(b: string) {
+  if (b === 'Standard m/ sveiv') return sveiv3;
+  if (b.includes(' io') || b.includes('Sunilus') || b.includes('Sunea')) return ioFjernkontroller;
+  if (b.includes('RTS')) return telisRts;
+  if (b.includes('bryter') || b.includes('Bryter') || b.includes('LT50') || b.includes('Orea WT')) return bryterliste;
+  return [];
+}
+
 // ---------- Terrassemarkise ----------
 export const terrasseModellHurtig = ['Premium', 'Premium Pluss'];
-export const terrasseModellFlere = ['Premium Pluss cross-over', 'Trendline', 'Trendline cross-over', 'Ipanema V280', 'Palermo V490', 'Santander V460'];
+export const terrasseModellFlere = ['Premium Pluss cross-over', 'Trendline', 'Trendline cross-over'];
 export const erPremium = (m: string) => m.startsWith('Premium');
+export const erPremiumPluss = (m: string) => m.startsWith('Premium Pluss');
 export const erTrendline = (m: string) => m.startsWith('Trendline');
 
-export const stativfargePremium = v('Hvit RAL 9010', 'Strukturert grå', 'Sort VS905');
-export const stativfargeTrendline = v('Hvit 9010', 'Grå 9006', 'Sort VS905', 'Valgfri RAL');
-// TODO: fyll inn fra eBest – stativfarger for Verano kassettmarkiser (Ipanema, Palermo, Santander).
+export const stativfargePremium = v('Hvit (RAL 9010)', 'Strukturert grå', 'Sort (VS 905)');
+export const stativfargeTrendline = v('Hvit (RAL 9010)', 'Grå (RAL 9006)', 'Sort (VS905)', 'Valgfri RAL');
+export const stativfargeTrendlineCross = v('Hvit (9010)', 'Grå (9006)', 'Sort (VS905)', 'Valgfri RAL');
 
 export const utfall = v('150', '200', '250', '300', '350');
 
-export const frontPremium = v('Soltis 86-2047 Antrasitt', 'Soltis 86-2167 Grå', 'Soltis 92-2047 Antrasitt', 'Soltis 92-2167 Grå');
-const soltis = ['2043 Brun', '2044 Hvit', '2045 Sølv', '2046 Sand', '2047 Gråkull', '2135 Beige', '2167 Grå'];
-export const frontTrendline = v('Lik markiseduk', ...soltis.map((f) => `Soltis 86 ${f}`), ...soltis.map((f) => `Soltis 92 ${f}`));
+export const frontPremium = v('SOLTIS 86-2047 ANTRASITT', 'SOLTIS 86-2167 GRÅ', 'SOLTIS 92-2047 ANTRASITT', 'SOLTIS 92-2167 GRÅ');
+const soltis = ['2043 BRUN', '2044 HVIT', '2045 SØLV', '2046 SAND', '2047 GRÅKULL', '2135 BEIGE', '2167 GRÅ'];
+export const frontTrendline = v('Lik markiseduk', ...soltis.map((f) => `SOLTIS 86-${f}`), ...soltis.map((f) => `SOLTIS 92-${f}`));
 
-export const terrasseBetjening = v('Standard m/ sveiv', 'Somfy Sunilus io 30/17', 'Somfy LT50 Helios 30/17 – bryter');
-export const sveivlengde = v('110', '140', '180');
-export const fjernkontrollIo = v('Ingen, benytter eksisterende', 'Smoove Origin IO', 'Situo IO Pure', 'Situo IO Pure 5 kanals');
-export const bryterValg = v('Ingen, benytter eksisterende', 'innfelt', 'utenpåliggende');
-export const motorkabel = v('Standard kabel', '5 m sort', '10 m hvit');
+export const TERRASSE_SVEIV = 'Standard m/ sveiv';
+export const terrasseBetjening = v(TERRASSE_SVEIV, 'Somfy Sunilus io 30/17', 'Somfy LT50 Helios 30/17 - Bryter');
+export const EOLIS = 'Ja, Eolis 3D sensor io';
+export function vindsikring(modell: string, betjening: string) {
+  const sunilus = betjening.includes('Sunilus');
+  const liste = erTrendline(modell)
+    ? ['Nei', 'Ja, vindsikringsstag 80-100cm', 'Ja, vindsikringsstag 150-220cm', 'Ja, vindsikringsstag eksklusiv']
+    : ['Nei', 'Ja - Sort vindsikringsstag', 'Ja - Grå vindsikringsstag'];
+  return v(...liste, ...(sunilus ? [EOLIS] : []));
+}
+export const motorkabelPremium = motorkabel3;
+export const motorkabelTrendline = v('Standard kabel', 'Tillegg, 10m Sort', 'Tillegg, 10m Hvit');
 export const takfargePremium = v('Grå', 'Hvit', 'Sort');
-export const takfargeTrendline = v('Grå', 'Hvit', 'Sort', 'Antrasitt');
+export const takfargeTrendline = v('Grå', 'Hvit', 'Antrasitt', 'Sort');
+export const festeTrendline = v('Vegg', 'Tak, rett', 'Tak, skrått');
+
+// ---------- Kassettmarkise (Verano) ----------
+export const kassettModell = v('Ipanema (V280)', 'Santander (V460)', 'Palermo (V490)');
+export const RAL_KASSETT = 'RAL ►';
+export const kassettFargeIpanema = v(RAL_KASSETT, 'Hvit', '9001 - Ivory', 'VS716 - Strukturert antrasite', 'VS905 - Strukturert sort');
+export const kassettFargeSantander = v('Hvit', '9001 - Ivory', 'VS716 - Strukturert antrasite', 'VS905 - Strukturert sort');
+const nr = (l: number[]) => l.map((x) => `70.${x}`);
+export const kassettDuker: Record<string, DukGruppe[]> = {
+  'Trend Colors': [{ navn: 'Trend Colors', navnIEbest: false, numre: nr([2516, 2601, 2602, 2603, 2604, 2618, 2623, 2624, 2625, 2648, 2658, 2739, 2740, 2741, 2742, 2744, 2746, 2747, 2749, 2750, 2751, 2752, 2753, 2754, 2756, 2801]) }],
+  'Urban Colors': [{ navn: 'Urban Colors', navnIEbest: false, numre: nr([2500, 2501, 2502, 2503, 2504, 2505, 2506, 2507, 2509, 2510, 2511, 2513, 2515, 2519, 2526, 2527, 2529, 2532, 2533, 2535, 2537, 2549, 2605, 2644, 2645, 2649, 2650, 2651, 2652, 2653, 2654, 2657, 2659, 2708, 2709, 2710, 2712, 2715, 2716, 2717, 2745, 2757, 2758, 2759, 2760, 2761, 2767, 2769, 2774, 2775, 2776, 2777, 2779, 2782, 2783, 2785, 2786, 2787, 2788, 2789, 2791, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800]) }],
+};
+export const kassettBetjening = v('Somfy Sunea io motor', 'Somfy Orea WT - Bryter');
+export const kassettKabel = v('Standard kabel', 'Tillegg, 3m Sort', 'Tillegg, 5m Sort', 'Tillegg, 10m Sort', 'Tillegg, 5m Hvit', 'Tillegg, 10m Hvit');
+export const kassettBrakett = v('Vegg - medium', 'Vegg - large', 'Vegg - XL (Tillegg)', 'Tak (Tillegg)');
 
 // ---------- Vindusmarkise ----------
-export const vindusStativ = v('RAL 9010 Hvit', '9006 Grå', '9005 Sort');
+export const vindusStativ = v('RAL 9010 - Hvit', 'RAL 9006 - Grå', 'RAL 9005 - Sort');
 export const armlengder = v('50', '60', '70', '80', '90', '100');
-export const vindusNisjeDybde = v('45', '65', '100', '130', '185');
+export const vindusNisje = v('Nei', 'Ja, dybde 45 mm', 'Ja, dybde 65 mm', 'Ja, dybde 100 mm', 'Ja, dybde 130 mm', 'Ja, dybde 185 mm');
 export const vindusBetjening = v('Standard m/ snorbetjening', 'Tillegg for io', 'Tillegg for RTS', 'Tillegg for brytermotor');
+export function vindusKabel(b: string) {
+  if (b === 'Tillegg for io') return v('5m Hvit', '5m Sort');
+  if (b === 'Tillegg for RTS') return v('5m Hvit', '3m Sort');
+  if (b === 'Tillegg for brytermotor') return v('2,5m Hvit', '2,5m Sort');
+  return [];
+}
 
-// ---------- Fasademarkise ----------
-export const fasadeModell = v('Fasademarkise', 'Balkongmarkise', 'Kurvmarkise');
+// ---------- Fasade-/balkongmarkise ----------
+export const fasadeModell = v('Fasademarkise', 'Balkongmarkise');
 export const fasadeStativ: Record<string, ReturnType<typeof v>> = {
-  Fasademarkise: v('Hvit', 'Grå', 'Sort'),
-  Balkongmarkise: v('Hvit', 'Grå'),
-  // TODO: fyll inn fra eBest – stativfarger for Kurvmarkise.
+  Fasademarkise: v('RAL 9010 - Hvit', 'RAL 9006 - Grå', 'RAL 9005 - Sort'),
+  Balkongmarkise: v('RAL 9010 - Hvit', 'RAL 9006 - Grå'),
 };
-export const fasadeNisjeDybde = v('6', '8', '11', '15');
+export const fasadeNisje = v('Nei', 'Ja, dybde 6cm', 'Ja, dybde 8cm', 'Ja, dybde 11cm', 'Ja, dybde 15cm');
 export const fasadeBetjening = v('Standard m/ sveiv', 'Tillegg for io', 'Tillegg for RTS', 'Tillegg for brytermotor');
+
+// ---------- Kurvmarkise ----------
+export const kurvType = v('Kvartbuet', 'Avtrappet', 'Rundbuet (pristillegg)');
+export const pyntelist = v('Spesial ►', '52 BEIGE', '79 GRÅ', '81 BRUN');
+export const kurvBetjening = v('Snortrekk', 'Oppspent', 'Motorstyring m/ innfelt bryter', 'Motorstyring m/ utenpåliggende bryter');
