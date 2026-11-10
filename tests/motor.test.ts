@@ -16,14 +16,15 @@ function post(svar: Record<string, Svar>, m: Record<string, MaalSvar>, ekstra: P
 }
 
 describe('Screen i motoren', () => {
-  it('tvinger Large bunnlist når bestilt bredde > 320, selv om Small er valgt', () => {
+  it('tvinger Large bunnlist når bestilt bredde > 300, selv om Small er valgt', () => {
     const p = post({ bunnlist: valgt('Small') }, { bredde: maal(315, { sideskinner: true }) });
     const k = lagKontekst(screenV550, p);
     expect(k.bestilt('bredde')).toBe(323.2);
     expect(k.gjeldende('bunnlist')).toMatchObject({ verdi: 'Large', kilde: 'automatisk' });
   });
   it('går tilbake til valgt verdi når bredden blir smal igjen', () => {
-    const p = post({ bunnlist: valgt('Small') }, { bredde: maal(300, { sideskinner: true }) });
+    const p = post({ bunnlist: valgt('Small') }, { bredde: maal(291.8, { sideskinner: true }) });
+    expect(lagKontekst(screenV550, p).bestilt('bredde')).toBe(300);
     expect(lagKontekst(screenV550, p).gjeldende('bunnlist')).toMatchObject({ verdi: 'Small', kilde: 'valgt' });
   });
   it('stor bunnlist (tvunget) gir +2 på høyde med kassett', () => {
@@ -100,5 +101,37 @@ describe('Flyt', () => {
   it('kopi hopper over valg som allerede er besvart, men viser målene', () => {
     const p = post({ storrelse: valgt('V550 S') }, {}, { modus: 'kopi' });
     expect(nesteSkjerm('bilde', screenV550, p)).toBe('felt:bredde');
+  });
+});
+
+import { plissetypeVarsler } from '../src/grenser/plissetyper';
+
+describe('Plissetype-grenser (prisliste 2026)', () => {
+  it('P1600: 120 × 220 eller 150 × 160, maks 2,4 m²', () => {
+    expect(plissetypeVarsler('P1600', false, 120, 200)).toEqual([]);
+    expect(plissetypeVarsler('P1600', false, 150, 160)).toEqual([]);
+    expect(plissetypeVarsler('P1600', false, 140, 200).join(' ')).toContain('over maksmål');
+    expect(plissetypeVarsler('P1600', false, 15, 100).join(' ')).toContain('under min 20');
+  });
+  it('P1700: plissé 220 × 260, Honeycell 250 × 260, maks 5,7 m²', () => {
+    expect(plissetypeVarsler('P1700', false, 230, 200).join(' ')).toContain('over maksmål for plissé');
+    expect(plissetypeVarsler('P1700', true, 230, 200)).toEqual([]); // innenfor Honeycell 250 × 260 og 5,7 m²
+  });
+  it('areal over maks gir varsel', () => {
+    expect(plissetypeVarsler('P1700', true, 240, 250).join(' ')).toContain('areal 6,00 m²');
+  });
+  it('P1740: maks høyde 170, min bredde 50', () => {
+    expect(plissetypeVarsler('P1740', false, 40, 180)).toHaveLength(2);
+  });
+  it('ukjent type gir ingen varsler', () => expect(plissetypeVarsler('P9999', false, 999, 999)).toEqual([]));
+});
+
+describe('Skråvindu Honeycell/plissé', () => {
+  it('skrå lengde (C) og laveste høyde bare ved skråvindu, uten fratrekk', () => {
+    const uten = mangler(honeycell, post({}, {})).map((s) => s.id);
+    expect(uten).not.toContain('skra_lengde');
+    const med = mangler(honeycell, post({ skravindu: valgt('Ja') }, {})).map((s) => s.id);
+    expect(med).toEqual(expect.arrayContaining(['laveste_hoyde', 'skra_lengde']));
+    expect(lagKontekst(honeycell, post({ skravindu: valgt('Ja') }, { skra_lengde: maal(130.4) })).bestilt('skra_lengde')).toBe(130.4);
   });
 });

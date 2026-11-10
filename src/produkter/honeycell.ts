@@ -3,7 +3,7 @@ import type { K, Produkt } from '../motor/typer';
 import { antall, valg } from './felles';
 import { v, profilfarge3, underlag5 } from '../valglister/felles';
 import { honeycellDuker, plisseDuker, plissetyperFlere, plissetyperHurtig } from '../valglister/honeycell';
-import { plissetypeGrenser } from '../grenser/plissetyper';
+import { plissetypeGrenser, plissetypeVarsler } from '../grenser/plissetyper';
 import { honeycellBredde, ingenRegel } from '../regler/regler';
 import { cmTekst } from '../regler/tall';
 
@@ -24,17 +24,7 @@ function honeycellMaks(k: K): string[] {
 }
 
 function plissetypeVarsel(k: K): string[] {
-  const t = String(k.verdi('plissetype') ?? '');
-  const gr = plissetypeGrenser[t];
-  if (!gr) return [];
-  const b = k.bestilt('bredde');
-  const h = k.bestilt('hoyde');
-  const ut: string[] = [];
-  if (b !== null && gr.maksBredde !== undefined && b > gr.maksBredde) ut.push(`${t}: bredde over maks ${gr.maksBredde} cm.`);
-  if (b !== null && gr.minBredde !== undefined && b < gr.minBredde) ut.push(`${t}: bredde under min ${gr.minBredde} cm.`);
-  if (h !== null && gr.maksHoyde !== undefined && h > gr.maksHoyde) ut.push(`${t}: høyde over maks ${gr.maksHoyde} cm.`);
-  if (h !== null && gr.minHoyde !== undefined && h < gr.minHoyde) ut.push(`${t}: høyde under min ${gr.minHoyde} cm.`);
-  return ut;
+  return plissetypeVarsler(String(k.verdi('plissetype') ?? ''), erHoneycell(k), k.bestilt('bredde'), k.bestilt('hoyde'));
 }
 
 const maalVarsler = (k: K) => [...honeycellMaks(k), ...plissetypeVarsel(k)];
@@ -55,7 +45,11 @@ export const honeycell: Produkt = {
     antall(),
     valg('plissetype', 'Plissetype', v(...plissetyperHurtig, ...plissetyperFlere), {
       hurtig: plissetyperHurtig,
-      hjelp: 'eBest viser bare typene som er mulige for målene.',
+      hjelp: 'eBest viser bare typene som er mulige for målene. P1740 og P1751 er skråmodeller.',
+      varsler: (k) => {
+        const m = plissetypeGrenser[String(k.verdi('plissetype') ?? '')]?.merknad;
+        return m ? [m] : [];
+      },
     }),
     {
       id: 'bredde',
@@ -77,16 +71,35 @@ export const honeycell: Produkt = {
       regel: (m) => ingenRegel(m),
       varsler: maalVarsler,
     },
-    valg('skravindu', 'Skråvindu?', v('Nei', 'Ja'), { ebestFelt: undefined, standard: 'Nei' }),
+    valg('skravindu', 'Skråvindu?', v('Nei', 'Ja'), {
+      ebestFelt: undefined, standard: 'Nei',
+      hjelp: 'Ved skråvindu: mål alle sider og bestill bruttomål. Regulering er alltid på høyeste side.',
+    }),
     {
       id: 'laveste_hoyde',
       ledetekst: 'Laveste høyde',
       ebestFelt: 'Laveste høyde (D)',
       type: 'maal',
       maaltype: 'brutto',
-      hjelp: 'Kun ved skråvindu. Ingen fratrekk.',
+      hjelp: 'Kun ved skråvindu. Bruttomål, ingen fratrekk.',
       regel: (m) => ingenRegel(m),
       vis: (k) => k.verdi('skravindu') === 'Ja',
+    },
+    {
+      id: 'skra_lengde',
+      ledetekst: 'Lengde skrå side (C)',
+      ebestFelt: 'Lengde skrå side (C)',
+      type: 'maal',
+      maaltype: 'brutto',
+      hjelp: 'Kun ved skråvindu. Mål den skrå siden øverst. Bruttomål, ingen fratrekk.',
+      regel: (m) => ingenRegel(m),
+      vis: (k) => k.verdi('skravindu') === 'Ja',
+      varsler: (k) => {
+        const c = k.bestilt('skra_lengde');
+        const t = String(k.verdi('plissetype') ?? '');
+        return c !== null && (t === 'P1740' || t === 'P1751') && c > 220
+          ? [`${t}: skråprofil ${String(c).replace('.', ',')} cm – maks 200 cm ved 60°, 220 cm ved 30°.`] : [];
+      },
     },
     valg('profilfarge', 'Profilfarge', profilfarge3),
     {

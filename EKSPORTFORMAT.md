@@ -120,14 +120,15 @@ En befaring kan lagres flere ganger. Nyeste versjon erstatter filene i mappen (s
 ### `honeycell` – Honeycell / Plissé (eBest: Interiør > Plissegardiner)
 
 Felt: `type` (Honeycell/Plissé), `prisgruppe`, `plissetype`, `skravindu` (appens eget, styrer laveste høyde), `profilfarge`, `duk` (eBest: Duktype), `regulering` (bare P17xx), `feste`, `underlag`. Standardvalg: `system`, `monteringshoyde`, `snorlengde` (bare P17xx), `snorlengde_cm` (bare ved Spesial).
-Mål: `bredde` (netto −0,4 cm), `hoyde` (brutto, ingen regel), `laveste_hoyde` (bare ved skråvindu).
+Mål: `bredde` (netto −0,4 cm), `hoyde` (brutto, ingen regel), `laveste_hoyde` og `skra_lengde` (skrå side C) bare ved skråvindu, brutto uten fratrekk.
+Varsler for maksmål per plissetype kommer fra prisliste 2026 (side 84–85). Regulering er alltid på høyeste side ved skråvindu.
 Merk: Plissé-duker har bare kolleksjon i appen. Nummeret er skrevet inn (`kilde: valgt`, men nummeret er fritekst).
 
 ### `screen-v550` – Scandic Zipscreen V550 (eBest: Eksteriør > Screen > Motorstyrt > Verano V550)
 
 Felt: `storrelse` (eBest: artikkel V550 XS/S/M/L), `bunnlist`, `screenduk`, `kassettfarge`, `kassettfarge_ral` (bare ved RAL (egen)), `motor` (eBest: Betjening), `bryter_fjernkontroll`, `regulering`, `stromkabel`, `kabellengde`, `stopsel` (ikke med ved imove – solcellemotor har ikke strømkabel), `utbygging`, `utbygging_avstand`, `utbygging_eget_lager` (true = **skal ikke bestilles**, tas fra eget lager), `feste`, `underlag`, `etasje`, `lift`. Standardvalg: `kassett_type`, `sideskinner`, `forboret_venstre`, `forboret_hoyre`.
 Mål: `bredde` (netto, +8,2 cm ved avkrysset sideskinner), `hoyde` (netto, kassett-tillegg XS +12 / S +13 / M +14 / L +16, og +2 ekstra med Large bunnlist).
-Regler: Large bunnlist er tvunget når bestilt bredde er over 320 cm. Solcellemotor imove (hvitt/sort panel) står ikke i eBest-listen for V550 og tvinger Rett kassett. Den må legges inn manuelt.
+Regler: Large bunnlist er tvunget når bestilt bredde er over 300 cm (prisliste 2026). Solcellemotor imove (hvitt/sort panel) står ikke i eBest-listen for V550 og tvinger Rett kassett. Den må legges inn manuelt.
 
 ### Interiør
 
@@ -141,7 +142,7 @@ Regler: Large bunnlist er tvunget når bestilt bredde er over 320 cm. Solcellemo
 - **`zipscreen-mini`**. Mål: `bredde` (−1 cm når `lysaapning` er avkrysset, som er standard), `hoyde` (brutto). Felt: `screenduk`, `kassettfarge` (+ `kassettfarge_ral`), `utbygging`, `utbygging_eget_lager` (true = **skal ikke bestilles**), `regulering`, `snorfarge`, `underlag`, `etasje`, `lift`. Standardvalg: `feste` (Vegg).
 - **`terrassemarkise`**. Felt: `modell`, `stativfarge` (+ `stativfarge_ral`), `utfall`, `duktype`, `dukfarge` eller `spesialfarge`, `kappe`, `kantband` (+ `kantband_farge`), `nedfellbar_front` (+ `front_dukfarge`), `betjening`, `sveivlengde` / `fjernkontroll` / `bryter`, `stromkabel` (motor), `regulering`, `tak` (+ `tak_lengde`, `tak_farge`), `hev_senk`, `vindsikring` (fritekst, liste mangler), `braketter`, `feste`, `underlag`, `etasje`, `lift`. Mål: `bredde` (brutto, hele cm).
 - **`scandic-50`, `scandic-80`, `standard-50`** (utvendige persienner). Mål: `bredde` (vindusmål +10 cm), `hoyde` (høydetrinn med dekkasse). Felt: `lamellfarge`, `dekkasse` (+ `dekkassefarge`), `vannbrett` (+ `vannbrett_dybde`), `feste`, `underlag`, `etasje`, `lift`. Scandic: `betjening` med `linelengde` / `sveivlengde` / `bryter` / `fjernkontroll` + `kabel`, `regulering`. Standard 50: `linelengde`, `regulering`. Standardvalg: `dekkasse_dybde`, `braketter`, `sammenkobling` (standard «Nei, frittstående») + `sammenkobling_type` / `sammenkobling_avstand`. Scandic 80 har også `sideskinne_venstre`, `sideskinne_hoyre`, `skinnefarge`, `beinlengde`, `beinfarge`, `endelokk`.
-- **`continent-50`**. Mål: `bredde` (`maaltype: "bestillingsmål"`, skrevet inn av selgeren etter veiledningen «trekk 2,2–5,5 cm, slutt på ,5», maks 220 cm), `hoyde` (høydetrinn med dekkasse). Felt: `lamellfarge`, `dekkasse` (+ `dekkassefarge`), `sprosser`, `vendestav`, `regulering`, `feste`, `underlag`, `etasje`, `lift`. Standardvalg: `braketter`.
+- **`continent-50`**. Mål: `bredde` (`maaltype: "bestillingsmål"`, skrevet inn av selgeren etter veiledningen «trekk 2,2–5,5 cm, slutt på ,5», maks 180 cm og maks 3,2 m²), `hoyde` (høydetrinn med dekkasse). Felt: `lamellfarge`, `dekkasse` (+ `dekkassefarge`), `sprosser`, `vendestav`, `regulering`, `feste`, `underlag`, `etasje`, `lift`. Standardvalg: `braketter`.
 - **`vindusmarkise`**. Felt: `stativfarge`, duk som terrassemarkise, `nisjebeslag` (+ `nisjebeslag_dybde` i mm), `sideforskyvning`, `wireboks`, `betjening`, `regulering`, `stromkabel` (fritekst), `underlag`, `braketter`, `etasje`, `lift`, `montor`. Mål: `bredde` (+20 cm, eller +10 cm med `vannrett`), `armlengde` (mål / 2, rundet opp til nærmeste 10. Bruk `bestillingsmaal_cm` som armlengde i artikkelen). Standardvalg: `feste` (Vegg).
 - **`fasademarkise`** (skal kun brukes under tak). Felt: `modell`, `stativfarge`, `armlengde` (50–100), duk som terrassemarkise, `innvendig_armfeste`, `nisjebeslag` (+ `nisjebeslag_dybde` i cm), `betjening`, `regulering`, `stromkabel`, `underlag`, `braketter`, `etasje`, `lift`. Mål: `bredde` (hele cm). Standardvalg: `feste` (Vegg).
 
@@ -179,3 +180,4 @@ Appen kan importere bookede befaringer (knappen «Importer befaringer.json» på
 
 - **1** (10.11.2026): første versjon. Honeycell/Plissé og Screen V550 har eget skjema.
 - **1** (10.11.2026, etappe 2): alle produkter unntatt dukskift, pergola, levegg, glassløsninger og garasjeport har eget skjema (`produkt.skjemaversjon: 2`). Nye mål-felt `hoydetrinn` og `valgt_trinn_cm`. Import av befaringer.json. Formatet er bakoverkompatibelt, så skjemaversjonen er uendret.
+- **1** (10.11.2026): grenser fra prisliste 2026 – Large bunnlist over 300 cm, Continent 50 maks 180 cm / 3,2 m², Persienne 25 maks 260 cm, maksmål per plissetype. Nytt mål `skra_lengde` på Honeycell/plissé ved skråvindu.

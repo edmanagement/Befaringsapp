@@ -93,11 +93,13 @@ describe('Etappe 2 i motoren', () => {
     expect(k.bestilt('armlengde')).toBe(80);
     expect(lagKontekst(p, post(p.id, {}, { bredde: maal(190, { vannrett: true }) })).bestilt('bredde')).toBe(200);
   });
-  it('Continent 50: maks bredde 220', () => {
+  it('Continent 50: maks bredde 180 og maks 3,2 m²', () => {
     const p = finn('continent-50');
     const s = p.steg.find((x) => x.id === 'bredde')!;
-    const k = lagKontekst(p, post(p.id, {}, { bredde: maal(221.5) }));
-    expect(s.varsler!(k).join(' ')).toContain('220');
+    const k = lagKontekst(p, post(p.id, {}, { bredde: maal(181.5) }));
+    expect(s.varsler!(k).join(' ')).toContain('180');
+    const k2 = lagKontekst(p, post(p.id, {}, { bredde: maal(179.5), hoyde: maal(200, {}, 203.0) }));
+    expect(s.varsler!(k2).join(' ')).toContain('3,2 m²');
     expect(s.varsler!(lagKontekst(p, post(p.id, {}, { bredde: maal(119.5) })))).toEqual([]);
   });
 });

@@ -191,7 +191,7 @@ sjekk((await page.locator('.resultat').innerText()).includes('216,0'), 'Screen h
 await neste();
 await overskrift('Bunnlist');
 await bilde('bunnlist-tvunget');
-sjekk(await knapp('Small').isDisabled(), 'Small er sperret når bredden er over 320');
+sjekk(await knapp('Small').isDisabled(), 'Small er sperret når bredden er over 300');
 await neste();
 await overskrift('Screenduk');
 await trykk('3 %');

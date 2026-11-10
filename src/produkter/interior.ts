@@ -28,7 +28,7 @@ export const persienne25: Produkt = {
       id: 'bredde', ledetekst: 'Bredde', ebestFelt: 'Bredde', type: 'maal', maaltype: 'netto',
       hjelp: 'Mål netto bredde. Appen trekker 4 mm.',
       regel: (m) => persienne25Bredde(m),
-      varsler: (k) => [...over('Bredde', k.bestilt('bredde'), 300), ...under('Bredde', k.bestilt('bredde'), 27)],
+      varsler: (k) => [...over('Bredde', k.bestilt('bredde'), 260), ...under('Bredde', k.bestilt('bredde'), 27)],
     },
     {
       id: 'hoyde', ledetekst: 'Høyde', ebestFelt: 'Høyde', type: 'maal', maaltype: 'ikke angitt',

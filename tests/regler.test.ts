@@ -52,9 +52,9 @@ describe('Screen V550', () => {
     expect(screenHoyde(200, true, 'S', true).bestilt_cm).toBe(215);
     expect(screenHoyde(200, false, 'S', true).bestilt_cm).toBe(200);
   });
-  it('tvungen Large bunnlist over 320 cm bestilt bredde', () => {
-    expect(screenStorBunnlistTvunget(320)).toBe(false);
-    expect(screenStorBunnlistTvunget(320.1)).toBe(true);
+  it('tvungen Large bunnlist over 300 cm bestilt bredde', () => {
+    expect(screenStorBunnlistTvunget(300)).toBe(false);
+    expect(screenStorBunnlistTvunget(300.1)).toBe(true);
     expect(screenStorBunnlistTvunget(null)).toBe(false);
   });
   it('varsler over maks for størrelsen', () => {

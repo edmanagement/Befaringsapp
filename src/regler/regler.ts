@@ -34,8 +34,8 @@ export const screenKassettTillegg: Record<ScreenStorrelse, number> = { XS: 12, S
 /** Ekstra kassett-tillegg med stor bunnlist. */
 export const SCREEN_STOR_BUNNLIST_EKSTRA_CM = 2;
 
-/** Over denne bestilte bredden er Large bunnlist tvunget. */
-export const SCREEN_STOR_BUNNLIST_OVER_CM = 320;
+/** Over denne bestilte bredden er Large bunnlist tvunget (prisliste 2026: «large benyttes over 3000 mm bredde»). */
+export const SCREEN_STOR_BUNNLIST_OVER_CM = 300;
 
 export function screenBredde(maalt: number, leggTilSideskinner: boolean): RegelResultat {
   if (!leggTilSideskinner) return { bestilt_cm: avrund(maalt), regel: 'Nettomål, ingen tillegg' };

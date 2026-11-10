@@ -274,6 +274,14 @@ export const standard50Produkt = utvPersienne(
 );
 
 // ---------- Continent 50 ----------
+/** Prisliste 2026: maks 180 × 220 cm og maks 3,2 m². */
+const continentAreal = (k: K): string[] => {
+  const b = k.bestilt('bredde');
+  const h = k.bestilt('hoyde');
+  if (b === null || h === null) return [];
+  const a = (b * h) / 10000;
+  return a > 3.2 + 1e-9 ? [`Areal ${a.toFixed(2).replace('.', ',')} m² er over maks 3,2 m².`] : [];
+};
 export const continent50Produkt: Produkt = {
   id: 'continent-50',
   navn: 'Continent 50',
@@ -285,17 +293,17 @@ export const continent50Produkt: Produkt = {
     antall(),
     {
       id: 'bredde', ledetekst: 'Bredde (bestillingsmål)', ebestFelt: 'Bredde', type: 'maal', maaltype: 'bestillingsmål',
-      hjelp: 'Trekk 2,2–5,5 cm i bredden. Bredden skal slutte på 5 (f.eks. 119,5). Skriv bestillingsbredden.',
+      hjelp: 'Trekk 2,2–5,5 cm i bredden. Bredden skal slutte på 5 (f.eks. 119,5). Skriv bestillingsbredden. Maks 180 cm.',
       regel: (m) => ({ bestilt_cm: m, regel: 'Bestillingsmål skrevet inn (veiledning: trekk 2,2–5,5 cm, slutt på ,5)' }),
       varsler: (k) => {
         const b = k.bestilt('bredde');
         return [
           ...(b !== null && !slutterPaaFem(b) ? [`Bredden ${cmTekst(b)} slutter ikke på ,5.`] : []),
-          ...over('Bredde', b, 220), ...under('Bredde', b, 30),
+          ...over('Bredde', b, 180), ...under('Bredde', b, 30), ...continentAreal(k),
         ];
       },
     },
-    hoydeMedTrinn(continent50, 220),
+    { ...hoydeMedTrinn(continent50, 220), varsler: (k) => [...over('Høyde', k.bestilt('hoyde'), 220), ...continentAreal(k)] } as Steg,
     valg('lamellfarge', 'Lamellfarge', P.lamellfarge50, { hjelp: 'Spesialfarge: skriv selv.' }),
     valg('dekkasse', 'Dekkasse', v('Ja', 'Nei')),
     valg('dekkassefarge', 'Dekkassefarge', P.dekkassefarge, { vis: dekkasseJa, hjelp: 'Spesialfarge: skriv selv.' }),
