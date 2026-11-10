@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alleVarsler, ebestTekst, lagKontekst, mangler, nesteSkjerm } from '../src/motor/motor';
+import { alleVarsler, valgListe, ebestTekst, lagKontekst, mangler, nesteSkjerm } from '../src/motor/motor';
 import { honeycell } from '../src/produkter/honeycell';
 import { screenV550 } from '../src/produkter/screen-v550';
 import type { MaalSvar, Post, Svar } from '../src/motor/typer';
@@ -71,9 +71,31 @@ describe('Honeycell i motoren', () => {
     expect(k.verdi('prisgruppe')).toBeNull();
   });
   it('duk-teksten har kolleksjon foran nummer', () => {
-    const p = post({ prisgruppe: valgt('1'), duk: valgt({ kolleksjon: 'MISTRAL', nummer: '7410' }) }, {});
+    const p = post({ duk: valgt({ kolleksjon: 'MISTRAL · gr. 1', nummer: '7410' }) }, {});
     const k = lagKontekst(honeycell, p);
     expect(ebestTekst(honeycell.steg.find((s) => s.id === 'duk')!, k)).toBe('MISTRAL - 7410');
+    expect(k.gjeldende('prisgruppe')).toMatchObject({ verdi: '1', kilde: 'automatisk' });
+  });
+  it('alle duker vises, lystett-filter gir bare BO', () => {
+    const steg = honeycell.steg.find((s) => s.id === 'duk')!;
+    if (steg.type !== 'duk') throw new Error();
+    const g = steg.grupper(lagKontekst(honeycell, post({}, {})));
+    expect(new Set(g.map((x) => x.prisgruppe))).toEqual(new Set(['1', '2', '3', '4', '5']));
+    const bo = g.filter(steg.filter!.test).map((x) => x.navn);
+    expect(bo).toContain('HALIFAX BO · gr. 3');
+    expect(bo).not.toContain('MISTRAL · gr. 1');
+  });
+  it('plissetype etter mål, skråvindu gir skråmodeller', () => {
+    const steg = honeycell.steg.find((s) => s.id === 'plissetype')!;
+    const liten = valgListe(steg as never, lagKontekst(honeycell, post({}, { bredde: { maalt_cm: 100.4, avkryssinger: {}, manuelt_cm: null }, hoyde: { maalt_cm: 150, avkryssinger: {}, manuelt_cm: null } })));
+    expect(liten).toContain('P1600');
+    expect(liten).not.toContain('P1740');
+    const stor = valgListe(steg as never, lagKontekst(honeycell, post({}, { bredde: { maalt_cm: 200.4, avkryssinger: {}, manuelt_cm: null }, hoyde: { maalt_cm: 200, avkryssinger: {}, manuelt_cm: null } })));
+    expect(stor).not.toContain('P1600');
+    expect(stor).toContain('P1700');
+    const skra = valgListe(steg as never, lagKontekst(honeycell, post({ type: valgt('Skråvindu – Plissé') }, {})));
+    expect(skra).toEqual(['P1740', 'P1751']);
+    expect(ebestTekst(honeycell.steg.find((s) => s.id === 'type')!, lagKontekst(honeycell, post({ type: valgt('Skråvindu – Plissé') }, {})))).toBe('Plissé');
   });
   it('regulering og snorlengde bare for P17xx', () => {
     const uten = mangler(honeycell, post({ plissetype: valgt('P1600') }, {})).map((s) => s.id);

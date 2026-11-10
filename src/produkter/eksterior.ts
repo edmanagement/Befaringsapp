@@ -124,15 +124,17 @@ export const terrassemarkise: Produkt = {
     }),
     valg('vindsikring', 'Vindsikring', [], { valg: (k) => M.vindsikring(modell(k), s(k, 'betjening')), standard: 'Nei' }),
     valg('regulering', 'Regulering (side)', v('Høyre', 'Venstre')),
-    valg('tak', 'Tak', v('Nei', 'Ja'), { vis: pluss, hjelp: 'Premium har ikke tak.' }),
-    { id: 'tak_lengde', ledetekst: 'Tak – lengde', ebestFelt: 'Tak lengde', type: 'tall', enhet: 'cm', vis: (k) => pluss(k) && k.verdi('tak') === 'Ja' },
+    valg('tak', 'Tak', v('Nei', 'Ja'), { vis: pluss, standard: 'Nei', hjelp: 'Lengden på taket regnes ut i eBest. Taket får samme farge som markisen.' }),
     valg('tak_farge', 'Tak – farge', [], {
-      ebestFelt: 'TakFarge',
+      ebestFelt: 'TakFarge', plassering: 'standardvalg',
       valg: (k) => (M.erTrendline(modell(k)) ? M.takfargeTrendline : M.takfargePremium),
       vis: (k) => pluss(k) && k.verdi('tak') === 'Ja',
+      tving: (k) => {
+        const f = M.takfargeFraStativ(s(k, 'stativfarge'));
+        return f ? { verdi: f, melding: `Taket får samme farge som markisen (${f}).` } : null;
+      },
     }),
     valg('hev_senk', 'Hev/Senk', v('Nei', 'Ja')),
-    { id: 'braketter', ledetekst: 'Braketter', ebestFelt: 'Braketter', type: 'tall', enhet: 'stk', heltall: true },
     valg('feste', 'Feste', [], { valg: (k) => (M.erTrendline(modell(k)) ? M.festeTrendline : v('Vegg', 'Tak')) }),
     valg('underlag', 'Underlag', underlag4),
     ...etasjeOgLift(),
@@ -211,7 +213,6 @@ const felles = (): Steg[] => [
   valg('feste', 'Feste', v('Vegg', 'Tak')),
   valg('underlag', 'Underlag', underlag4),
   ...etasjeOgLift(),
-  { id: 'braketter', ledetekst: 'Braketter', ebestFelt: 'Braketter', type: 'tall', enhet: 'stk', heltall: true, plassering: 'standardvalg' },
 ];
 
 const dekkasseJa = (k: K) => k.verdi('dekkasse') === 'Ja';
@@ -363,7 +364,6 @@ export const vindusmarkise: Produkt = {
     valg('stromkabel', 'Kabel', [], { ebestFelt: 'Kabel', valg: (k) => M.vindusKabel(s(k, 'betjening')), vis: motorVindus }),
     valg('regulering', 'Regulering (side)', v('Høyre', 'Venstre')),
     valg('underlag', 'Underlag', underlag4),
-    { id: 'braketter', ledetekst: 'Braketter', ebestFelt: 'Braketter', type: 'tall', enhet: 'stk', heltall: true },
     ...etasjeOgLift(),
     valg('montor', 'Montering', v('Ja', 'Selvmontering'), { ebestFelt: 'Montering' }),
     valg('feste', 'Feste', v('Vegg'), { plassering: 'standardvalg', standard: 'Vegg' }),
@@ -397,7 +397,6 @@ export const fasademarkise: Produkt = {
     valg('stromkabel', 'Kabel', M.motorkabelPremium, { ebestFelt: 'Kabel', vis: motorVindus, standard: 'Standard kabel' }),
     valg('regulering', 'Regulering (side)', v('Høyre', 'Venstre')),
     valg('underlag', 'Underlag', underlag4),
-    { id: 'braketter', ledetekst: 'Braketter', ebestFelt: 'Braketter', type: 'tall', enhet: 'stk', heltall: true },
     ...etasjeOgLift(),
     valg('feste', 'Feste', v('Vegg'), { plassering: 'standardvalg', standard: 'Vegg' }),
   ],

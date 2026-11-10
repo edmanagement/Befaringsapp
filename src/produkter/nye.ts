@@ -16,8 +16,6 @@ const maal = (id: string, ledetekst: string, ekstra: Partial<MaalSteg> = {}): Ma
 });
 const tekst = (id: string, ledetekst: string, ekstra: Partial<Steg> = {}): Steg =>
   ({ id, ledetekst, ebestFelt: ledetekst, type: 'tekst', ...ekstra } as Steg);
-const braketter = (id = 'braketter', ledetekst = 'Braketter'): Steg =>
-  ({ id, ledetekst, ebestFelt: ledetekst, type: 'tall', enhet: 'stk', heltall: true, valgfri: true });
 const ja = (id: string) => (k: K) => k.verdi(id) === 'Ja';
 
 // ---------- Kurvmarkise ----------
@@ -35,7 +33,6 @@ export const kurvmarkise: Produkt = {
     valg('regulering', 'Regulering', v('Høyre', 'Venstre')),
     valg('feste', 'Feste', veggTak),
     valg('underlag', 'Underlag', underlag4),
-    braketter(),
     ...etasjeOgLift(),
   ],
 };
@@ -272,7 +269,6 @@ export const pergola: Produkt = {
     valg('regulering', 'Regulering', v('Høyre', 'Venstre')),
     valg('feste', 'Feste', veggTak),
     valg('underlag', 'Underlag', underlag4),
-    braketter('festebraketter', 'Festebraketter'),
     ...etasjeOgLift(),
   ],
 };

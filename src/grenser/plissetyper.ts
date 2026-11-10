@@ -66,3 +66,11 @@ export function plissetypeVarsler(type: string, erHoneycell: boolean, bredde: nu
   if (g.maksHoyde && hoyde !== null && hoyde > g.maksHoyde) ut.push(`${type}: høyde over maks ${g.maksHoyde} cm.`);
   return ut;
 }
+
+/** Plissetypene som passer målene. Skråvindu gir bare skråmodellene. Uten mål: alle av riktig slag. */
+export function muligePlissetyper(alle: string[], erHoneycell: boolean, skra: boolean, bredde: number | null, hoyde: number | null): string[] {
+  const skraModeller = ['P1740', 'P1751'];
+  return alle
+    .filter((t) => skraModeller.includes(t) === skra)
+    .filter((t) => plissetypeVarsler(t, erHoneycell, bredde, hoyde).length === 0);
+}

@@ -195,6 +195,10 @@ export function ebestTekst(s: Steg, k: ReturnType<typeof lagKontekst>): string {
   const v = k.gjeldende(s.id).verdi;
   if (v === null) return '';
   if (typeof v === 'boolean') return v ? 'Ja' : 'Nei';
+  if (s.type === 'valg' && typeof v === 'string') {
+    const x = (typeof s.valg === 'function' ? s.valg(k) : s.valg).find((y) => y.tekst === v);
+    if (x?.ebest) return x.ebest;
+  }
   if (erDuk(v)) {
     const g = s.type === 'duk' ? s.grupper(k).find((x) => x.navn === v.kolleksjon) : undefined;
     if (g?.ebestMal) return g.ebestMal.replace('{k}', v.kolleksjon).replace('{n}', v.nummer);

@@ -46,7 +46,6 @@ export const persienne25: Produkt = {
     valg('regulering', 'Regulering', v('Høyre', 'Venstre')),
     valg('feste', 'Feste', v('Vegg', 'Tak')),
     valg('underlag', 'Underlag', underlag4),
-    { id: 'braketter', ledetekst: 'Braketter', ebestFelt: 'Braketter', type: 'tall', enhet: 'stk', heltall: true, plassering: 'standardvalg' },
   ],
 };
 
@@ -109,7 +108,7 @@ export const lamellgardin: Produkt = {
       type: 'maal' as const, maaltype: 'brutto' as const, plassering: 'standardvalg' as const,
       hjelp: 'Mål på skrå: ingen fratrekk. A og B er bredde og høyde.', regel: (m: number) => ingenRegel(m), vis: skraa,
     })),
-    { id: 'monteringshoyde', ledetekst: 'Monteringshøyde', ebestFelt: 'Monteringshøyde', type: 'tall', enhet: 'cm', plassering: 'standardvalg' },
+    { id: 'monteringshoyde', ledetekst: 'Monteringshøyde', ebestFelt: 'Monteringshøyde', type: 'tall', enhet: 'cm', plassering: 'standardvalg', standard: 210 },
   ],
 };
 
@@ -150,7 +149,7 @@ export const rullegardin: Produkt = {
     valg('styrewire', 'Styrewire', v('Nei', 'Ja'), { plassering: 'standardvalg' }),
     valg('monteringsprofil', 'Monteringsprofil', v('Nei', 'Ja'), { plassering: 'standardvalg' }),
     valg('underlist', 'Underlist', v('L1 13x29'), { plassering: 'standardvalg' }),
-    { id: 'monteringshoyde', ledetekst: 'Monteringshøyde', ebestFelt: 'Monteringshøyde', type: 'tall', enhet: 'cm', plassering: 'standardvalg' },
+    { id: 'monteringshoyde', ledetekst: 'Monteringshøyde', ebestFelt: 'Monteringshøyde', type: 'tall', enhet: 'cm', plassering: 'standardvalg', standard: 210 },
   ],
 };
 

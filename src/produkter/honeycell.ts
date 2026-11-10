@@ -2,12 +2,22 @@
 import type { K, Produkt } from '../motor/typer';
 import { antall, valg } from './felles';
 import { v, underlag5 } from '../valglister/felles';
-import { honeycellDuker, plisseDuker, plissetyperFlere, plissetyperHurtig } from '../valglister/honeycell';
-import { plissetypeGrenser, plissetypeVarsler } from '../grenser/plissetyper';
+import { alleHoneycellDuker, allePlisseDuker, erLystett, plissetyperFlere, plissetyperHurtig, skraTyper } from '../valglister/honeycell';
+import { muligePlissetyper, plissetypeGrenser, plissetypeVarsler } from '../grenser/plissetyper';
 import { honeycellBredde, ingenRegel } from '../regler/regler';
 import { cmTekst } from '../regler/tall';
 
-const erHoneycell = (k: K) => k.verdi('type') === 'Honeycell';
+const erHoneycell = (k: K) => String(k.verdi('type') ?? '').endsWith('Honeycell');
+const erSkra = (k: K) => String(k.verdi('type') ?? '').startsWith('Skråvindu') || k.verdi('skravindu') === 'Ja';
+const alleTyper = [...plissetyperHurtig, ...plissetyperFlere, ...skraTyper.filter((t) => !plissetyperHurtig.includes(t) && !plissetyperFlere.includes(t))];
+const muligeTyper = (k: K) => muligePlissetyper(alleTyper, erHoneycell(k), erSkra(k), k.bestilt('bredde'), k.bestilt('hoyde'));
+const dukerFor = (k: K) => (erHoneycell(k) ? alleHoneycellDuker : allePlisseDuker);
+/** Prisgruppen følger valgt duk. */
+const gruppeFraDuk = (k: K): string | null => {
+  const d = k.verdi('duk');
+  if (!d || typeof d !== 'object') return null;
+  return dukerFor(k).find((g) => g.navn === d.kolleksjon)?.prisgruppe ?? null;
+};
 /** Snortyper: regulering og snorlengde vises bare for P17xx. */
 const erSnortype = (k: K) => /^P17/.test(String(k.verdi('plissetype') ?? ''));
 
@@ -33,23 +43,17 @@ export const honeycell: Produkt = {
   id: 'honeycell',
   navn: 'Honeycell / Plissé',
   kategori: 'Interiør',
-  versjon: 2,
+  versjon: 3,
   ebestSti: 'Interiør > Plissegardiner',
   antallFelt: 'antall',
   steg: [
-    valg('type', 'Type', v('Honeycell', 'Plissé'), { ebestFelt: 'Type', standard: 'Honeycell' }),
-    valg('prisgruppe', 'Prisgruppe', [], {
-      valg: (k) => (erHoneycell(k) ? v('1', '2', '3', '4', '5') : v('E', '1', '2')),
-      hjelp: 'Honeycell gr. 5 = Ivrea.',
-    }),
-    antall(),
-    valg('plissetype', 'Plissetype', v(...plissetyperHurtig, ...plissetyperFlere), {
-      hurtig: plissetyperHurtig,
-      hjelp: 'eBest viser bare typene som er mulige for målene. P1740 og P1751 er skråmodeller.',
-      varsler: (k) => {
-        const m = plissetypeGrenser[String(k.verdi('plissetype') ?? '')]?.merknad;
-        return m ? [m] : [];
-      },
+    valg('type', 'Type', v('Honeycell', 'Plissé'), {
+      ebestFelt: 'Type', standard: 'Honeycell',
+      valg: [
+        { tekst: 'Honeycell' }, { tekst: 'Plissé' },
+        { tekst: 'Skråvindu – Honeycell', ebest: 'Honeycell' }, { tekst: 'Skråvindu – Plissé', ebest: 'Plissé' },
+      ],
+      hjelp: 'Skråvindu: mål alle sider og bestill bruttomål. Regulering er alltid på høyeste side.',
     }),
     {
       id: 'bredde',
@@ -71,19 +75,15 @@ export const honeycell: Produkt = {
       regel: (m) => ingenRegel(m),
       varsler: maalVarsler,
     },
-    valg('skravindu', 'Skråvindu?', v('Nei', 'Ja'), {
-      ebestFelt: undefined, standard: 'Nei',
-      hjelp: 'Ved skråvindu: mål alle sider og bestill bruttomål. Regulering er alltid på høyeste side.',
-    }),
     {
       id: 'laveste_hoyde',
       ledetekst: 'Laveste høyde',
       ebestFelt: 'Laveste høyde (D)',
       type: 'maal',
       maaltype: 'brutto',
-      hjelp: 'Kun ved skråvindu. Bruttomål, ingen fratrekk.',
+      hjelp: 'Skråvindu. Bruttomål, ingen fratrekk.',
       regel: (m) => ingenRegel(m),
-      vis: (k) => k.verdi('skravindu') === 'Ja',
+      vis: erSkra,
     },
     {
       id: 'skra_lengde',
@@ -91,33 +91,49 @@ export const honeycell: Produkt = {
       merknadEksport: 'Ikke eget felt i eBest – legg i kommentar.',
       type: 'maal',
       maaltype: 'brutto',
-      hjelp: 'Kun ved skråvindu. Mål den skrå siden øverst. Bruttomål, ingen fratrekk.',
+      hjelp: 'Skråvindu. Mål den skrå siden øverst. Bruttomål, ingen fratrekk.',
       regel: (m) => ingenRegel(m),
-      vis: (k) => k.verdi('skravindu') === 'Ja',
+      vis: erSkra,
       varsler: (k) => {
         const c = k.bestilt('skra_lengde');
-        const t = String(k.verdi('plissetype') ?? '');
-        return c !== null && (t === 'P1740' || t === 'P1751') && c > 220
-          ? [`${t}: skråprofil ${String(c).replace('.', ',')} cm – maks 200 cm ved 60°, 220 cm ved 30°.`] : [];
+        return c !== null && c > 220 ? [`Skråprofil ${cmTekst(c)} cm – maks 200 cm ved 60°, 220 cm ved 30°.`] : [];
       },
     },
-    valg('profilfarge', 'Profilfarge', v('HVIT', 'GRÅ', 'SORT')),
+    valg('plissetype', 'Plissetype', [], {
+      valg: (k) => v(...muligeTyper(k)),
+      hurtig: [...plissetyperHurtig, ...skraTyper],
+      hjelp: 'Bare typene som passer målene vises (maksmål fra prisliste 2026). eBest avgjør endelig.',
+      varsler: (k) => {
+        const m = plissetypeGrenser[String(k.verdi('plissetype') ?? '')]?.merknad;
+        const ingen = muligeTyper(k).length === 0 ? ['Ingen plissetype passer målene – sjekk målene eller skriv selv.'] : [];
+        return [...ingen, ...(m ? [m] : [])];
+      },
+    }),
     {
       id: 'duk',
       ledetekst: 'Duktype',
       ebestFelt: 'Duktype',
       type: 'duk',
-      gruppeLedetekst: 'Kolleksjon',
-      grupper: (k) => {
-        const gr = String(k.verdi('prisgruppe') ?? '');
-        return (erHoneycell(k) ? honeycellDuker[gr] : plisseDuker[gr]) ?? [];
-      },
+      gruppeLedetekst: 'Kolleksjon (prisgruppe)',
+      grupper: dukerFor,
+      filter: { tekst: 'Bare lystette duker (BO)', test: erLystett },
     },
+    valg('profilfarge', 'Profilfarge', v('HVIT', 'GRÅ', 'SORT')),
     valg('regulering', 'Regulering', v('Venstre', 'Høyre'), { vis: erSnortype }),
     valg('feste', 'Feste', v('Vegg', 'Tak', 'Glasslistbeslag')),
     valg('underlag', 'Underlag', underlag5),
 
     // ---- Standardvalg-skjermen ----
+    antall(),
+    valg('prisgruppe', 'Prisgruppe', [], {
+      plassering: 'standardvalg',
+      valg: (k) => (erHoneycell(k) ? v('1', '2', '3', '4', '5') : v('E', '1', '2')),
+      tving: (k) => {
+        const gr = gruppeFraDuk(k);
+        return gr ? { verdi: gr, melding: `Prisgruppe ${gr} følger valgt duk.` } : null;
+      },
+      hjelp: 'Settes automatisk fra duken. Honeycell gr. 5 = Ivrea.',
+    }),
     valg('system', 'System', v('Benthin (Ny)', 'Blöcker'), { plassering: 'standardvalg', standard: 'Benthin (Ny)' }),
     {
       id: 'monteringshoyde',

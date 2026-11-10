@@ -191,8 +191,11 @@ function AvkryssingFelt({ produkt, post, steg, settSvar, neste }: FeltProps & { 
 function DukFelt({ produkt, post, steg, settSvar, neste }: FeltProps & { steg: DukSteg }) {
   const k = lagKontekst(produkt, post);
   const g = k.gjeldende(steg.id);
-  const grupper: DukGruppe[] = steg.grupper(k);
+  const alleGrupper: DukGruppe[] = steg.grupper(k);
   const naa = g.verdi && typeof g.verdi === 'object' ? (g.verdi as DukVerdi) : null;
+  const [filterPaa, setFilterPaa] = useState(() =>
+    !!steg.filter && !!naa && alleGrupper.some((x) => x.navn === naa.kolleksjon && steg.filter!.test(x)));
+  const grupper = steg.filter && filterPaa ? alleGrupper.filter(steg.filter.test) : alleGrupper;
   const [gruppe, setGruppe] = useState<DukGruppe | null>(
     naa ? grupper.find((x) => x.navn === naa.kolleksjon) ?? null : grupper.length === 1 ? grupper[0] : null,
   );
@@ -219,6 +222,11 @@ function DukFelt({ produkt, post, steg, settSvar, neste }: FeltProps & { steg: D
   if (!gruppe)
     return (
       <>
+        {steg.filter && (
+          <button className={`sjekk ${filterPaa ? 'paa' : ''}`} aria-pressed={filterPaa} onClick={() => setFilterPaa(!filterPaa)}>
+            <span className="boks">{filterPaa ? '✓' : ''}</span>{steg.filter.tekst}
+          </button>
+        )}
         <p className="liten">{steg.gruppeLedetekst ?? 'Kolleksjon'}</p>
         <input className="inn sok" placeholder="Søk fargenummer …" inputMode="search" value={sok} onChange={(e) => setSok(e.target.value)} />
         {treff.length > 0 && (

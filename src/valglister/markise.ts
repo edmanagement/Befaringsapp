@@ -72,6 +72,14 @@ export const motorkabelPremium = motorkabel3;
 export const motorkabelTrendline = v('Standard kabel', 'Tillegg, 10m Sort', 'Tillegg, 10m Hvit');
 export const takfargePremium = v('Grå', 'Hvit', 'Sort');
 export const takfargeTrendline = v('Grå', 'Hvit', 'Antrasitt', 'Sort');
+/** Takfarge = samme farge som markisen (stativfargen). null = må velges (f.eks. valgfri RAL). */
+export function takfargeFraStativ(stativ: string): string | null {
+  const t = stativ.toLowerCase();
+  if (t.includes('hvit')) return 'Hvit';
+  if (t.includes('grå')) return 'Grå';
+  if (t.includes('sort')) return 'Sort';
+  return null;
+}
 export const festeTrendline = v('Vegg', 'Tak, rett', 'Tak, skrått');
 
 // ---------- Kassettmarkise (Verano) ----------

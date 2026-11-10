@@ -46,6 +46,8 @@ export interface Valg {
   tekst: string;
   /** Liten forklaring under knappen (vises bare i appen). */
   under?: string;
+  /** Tekst i eBest når den er en annen enn knappeteksten. */
+  ebest?: string;
 }
 
 export interface DukGruppe {
@@ -59,6 +61,8 @@ export interface DukGruppe {
   ebestMal?: string;
   /** Merknad, f.eks. TODO om at listen mangler. */
   merknad?: string;
+  /** Prisgruppen duken hører til (når alle grupper vises samlet). */
+  prisgruppe?: string;
 }
 
 export interface RegelResultat {
@@ -122,6 +126,8 @@ export interface DukSteg extends StegFelles {
   type: 'duk';
   grupper: (k: K) => DukGruppe[];
   gruppeLedetekst?: string;
+  /** Avkryssing øverst som filtrerer kolleksjonene, f.eks. «Bare lystette duker». */
+  filter?: { tekst: string; test: (g: DukGruppe) => boolean };
 }
 
 export interface Hoydetrinn {

@@ -11,6 +11,7 @@ export const antall = (): TallSteg => ({
   heltall: true,
   min: 1,
   standard: 1,
+  plassering: 'standardvalg',
 });
 
 export const valg = (id: string, ledetekst: string, valgListe: Valg[], ekstra: Partial<ValgSteg> = {}): ValgSteg => ({

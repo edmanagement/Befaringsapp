@@ -85,3 +85,19 @@ export const plisseDuker: Record<string, DukGruppe[]> = {
 /** Plissetyper. P1740 og P1751 er med selv om de ikke dukket opp i eBest-listen for ett testmål. */
 export const plissetyperHurtig = ['P1600', 'P1615', 'P1616', 'P1700', 'P1710', 'P1740', 'P1751'];
 export const plissetyperFlere = ['P1610', 'P1636', 'P1705', 'P1715', 'P1800', 'P1805', 'P1900Z'];
+
+/** Alle kolleksjoner samlet, med prisgruppe i navnet («MISTRAL · gr. 1»). eBest-teksten er uten gruppe. */
+function samlet(per: Record<string, DukGruppe[]>, rekkefolge: string[]): DukGruppe[] {
+  return rekkefolge.flatMap((gr) => (per[gr] ?? []).map((g) => ({
+    ...g,
+    navn: `${g.navn} · gr. ${gr}`,
+    ebestMal: (g.ebestMal ?? '{k} - {n}').replace('{k}', g.navn),
+    prisgruppe: gr,
+  })));
+}
+export const alleHoneycellDuker = samlet(honeycellDuker, ['1', '2', '3', '4', '5']);
+export const allePlisseDuker = samlet(plisseDuker, ['E', '1', '2']);
+/** Lystett = blackout (BO) i kolleksjonsnavnet. */
+export const erLystett = (g: DukGruppe) => /\bBO\b/.test(g.navn);
+
+export const skraTyper = ['P1740', 'P1751'];
