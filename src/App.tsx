@@ -5,6 +5,8 @@ import { BefaringSkjema } from './sider/BefaringSkjema';
 import { BefaringSide } from './sider/BefaringSide';
 import { PostVeiviser } from './sider/PostVeiviser';
 import { Innstillinger } from './sider/Innstillinger';
+import { fullforInnloggingFraUrl } from './eksport/dropbox';
+import { lastOppVentende } from './eksport/eksport';
 
 export type Rute =
   | { side: 'liste' }
@@ -44,13 +46,28 @@ export function App() {
 
   useEffect(() => {
     (async () => {
+      // Tilbake fra Dropbox-innlogging?
+      const dbx = await fullforInnloggingFraUrl().catch(() => 'feil' as const);
+      if (dbx) {
+        sessionStorage.setItem('dropbox-melding', dbx === 'ok' ? 'OK: Dropbox er koblet til.' : 'FEIL: Kunne ikke koble til Dropbox. Prøv igjen.');
+        return setRute({ side: 'innstillinger' });
+      }
       if (location.hash && location.hash !== '#/') return setRute(hashTilRute(location.hash));
       const siste = await hentSisteRute();
       setRute(siste ? hashTilRute(siste) : { side: 'liste' });
     })();
     const vedEndring = () => setRute(hashTilRute(location.hash));
     window.addEventListener('hashchange', vedEndring);
-    return () => window.removeEventListener('hashchange', vedEndring);
+    // Last opp befaringer som venter på nett.
+    const ko = () => lastOppVentende().then((n) => n && window.dispatchEvent(new Event('dropbox-opplastet')));
+    ko();
+    window.addEventListener('online', ko);
+    document.addEventListener('visibilitychange', ko);
+    return () => {
+      window.removeEventListener('hashchange', vedEndring);
+      window.removeEventListener('online', ko);
+      document.removeEventListener('visibilitychange', ko);
+    };
   }, []);
 
   useEffect(() => {

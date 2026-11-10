@@ -2,7 +2,7 @@
 import { chromium, devices } from 'playwright';
 import fs from 'node:fs';
 
-const URL = process.env.URL ?? 'http://localhost:4173/';
+const APP_URL = process.env.URL ?? 'http://localhost:4173/';
 const UT = '/tmp/e2e';
 const BILDE = `${UT}/bilde.jpg`;
 
@@ -11,8 +11,32 @@ const ctx = await browser.newContext({ ...devices['iPhone 13'], acceptDownloads:
 const page = await ctx.newPage();
 const feil = [];
 page.on('pageerror', (e) => feil.push(e.message));
-page.on('console', (m) => m.type() === 'error' && feil.push(m.text()));
+page.on('console', (m) => m.type() === 'error' && !m.text().includes('409') && feil.push(m.text()));
 page.on('dialog', (d) => d.accept());
+
+// --- Falsk Dropbox (ekte innlogging testes på live-siden)
+const opplastet = [];
+let slettet = [];
+await ctx.route('https://www.dropbox.com/oauth2/authorize**', (r) => {
+  const u = new URL(r.request().url());
+  r.fulfill({ status: 302, headers: { Location: u.searchParams.get('redirect_uri') + '?code=testkode' } });
+});
+await ctx.route('https://api.dropboxapi.com/oauth2/token', async (r) => {
+  const body = new URLSearchParams(r.request().postData());
+  if (body.get('grant_type') === 'authorization_code' && body.get('code') === 'testkode' && body.get('code_verifier'))
+    return r.fulfill({ json: { access_token: 'tok', refresh_token: 'ref', expires_in: 14400 } });
+  r.fulfill({ status: 400, body: 'feil' });
+});
+await ctx.route('https://api.dropboxapi.com/2/users/get_current_account', (r) => r.fulfill({ json: { email: 'espen@eksempel.no' } }));
+await ctx.route('https://api.dropboxapi.com/2/files/delete_v2', (r) => {
+  slettet.push(JSON.parse(r.request().postData()).path);
+  r.fulfill({ status: 409, json: { error_summary: 'path_lookup/not_found/' } });
+});
+await ctx.route('https://content.dropboxapi.com/2/files/upload', (r) => {
+  const arg = r.request().headers()['dropbox-api-arg'];
+  opplastet.push({ arg, ascii: /^[\x00-\x7f]*$/.test(arg), sti: JSON.parse(arg).path, auth: r.request().headers()['authorization'], body: r.request().postDataBuffer() });
+  r.fulfill({ json: { name: 'ok' } });
+});
 
 let n = 0;
 const bilde = async (navn) => page.screenshot({ path: `${UT}/${String(++n).padStart(2, '0')}-${navn}.png`, fullPage: true });
@@ -25,7 +49,7 @@ const overskrift = async (t) => {
 const skriv = async (t) => { await page.locator('input.inn').first().fill(t); };
 const sjekk = (ok, tekst) => { if (!ok) throw new Error('FEIL: ' + tekst); console.log('✓', tekst); };
 
-await page.goto(URL);
+await page.goto(APP_URL);
 await bilde('tom-liste');
 
 // --- Ny befaring
@@ -222,12 +246,45 @@ await page.locator('h3').first().click(); // blur → lagre
 await bilde('befaring-med-poster');
 const titler = await page.locator('.postkort .tittel').allInnerTexts();
 sjekk(titler.length === 3 && titler[0] === 'Stue vest – Honeycell / Plissé – 2 stk', 'Postliste: ' + titler.join(' | '));
-const [dl] = await Promise.all([page.waitForEvent('download'), trykk('Fullfør og eksporter')]);
+sjekk(await knapp('Koble til Dropbox for å lagre').isVisible(), 'Uten Dropbox: knapp for å koble til');
+
+// --- Zip (reserve)
+const [dl] = await Promise.all([page.waitForEvent('download'), trykk('Last ned som zip (reserve)')]);
 const zip = `${UT}/${dl.suggestedFilename()}`;
 await dl.saveAs(zip);
 sjekk(fs.existsSync(zip), 'Zip lastet ned: ' + dl.suggestedFilename());
-await page.locator('.info', { hasText: 'lastet ned' }).waitFor();
-await bilde('etter-eksport');
+
+// --- Koble til Dropbox
+await trykk('Koble til Dropbox for å lagre');
+await trykk('Koble til Dropbox');
+await page.getByText('Dropbox er koblet til.').waitFor();
+sjekk((await page.locator('.info').allInnerTexts()).some((t) => t.includes('espen@eksempel.no')), 'Innlogging fullført, viser konto');
+await bilde('dropbox-tilkoblet');
+await page.locator('.topp button').first().click();
+await trykk(/^Gjennomført/, false);
+await page.locator('.kort', { hasText: 'Ola Nordmann' }).click();
+
+// --- Uten nett: settes i kø
+await ctx.setOffline(true);
+await trykk('Lagre i Dropbox på nytt');
+await page.getByText('Uten nett nå').waitFor();
+sjekk(opplastet.length === 0, 'Uten nett: ingenting lastet opp, venter i kø');
+await bilde('dropbox-venter');
+// --- Nett tilbake: lastes opp automatisk
+await ctx.setOffline(false);
+await page.evaluate(() => window.dispatchEvent(new Event('online')));
+for (let i = 0; i < 50 && !(await page.locator('.kunde .merke').innerText()).includes('eksportert'); i++) await page.waitForTimeout(100);
+sjekk((await page.locator('.kunde .merke').innerText()) === 'eksportert', 'Nett tilbake: lastet opp automatisk, status eksportert');
+const stier = opplastet.map((o) => o.sti);
+console.log('   ' + stier.join('\n   '));
+const mappe = '/Scandic Markiser/Befaringer/' + dl.suggestedFilename().replace('.zip', '');
+sjekk(stier.includes(mappe + '/befaring.json') && stier.includes(mappe + '/oppsummering.md') && stier.includes(mappe + '/bilder/01-stue-vest-1.jpg'), 'Riktige filer i riktig Dropbox-mappe');
+sjekk(opplastet.every((o) => o.ascii && o.auth === 'Bearer tok'), 'Dropbox-API-Arg er ASCII og token sendes');
+sjekk(slettet.includes(mappe + '/bilder'), 'Gamle bilder ryddes før opplasting');
+const json = JSON.parse(opplastet.find((o) => o.sti.endsWith('befaring.json')).body.toString('utf8'));
+sjekk(json.poster.length === 3 && json.befaring.kunde.navn === 'Ola Nordmann', 'befaring.json i Dropbox har 3 poster');
+const md = opplastet.find((o) => o.sti.endsWith('oppsummering.md')).body.toString('utf8');
+sjekk(md.includes('Høyde') && md.includes('Ø') === md.includes('Ø'), 'oppsummering.md er UTF-8 (æøå bevart)');
 
 // --- Rediger en ferdig post
 await page.locator('.postkort').first().getByRole('button', { name: 'Rediger' }).click();
@@ -243,7 +300,7 @@ sjekk((await page.locator('.kunde .merke').innerText()) === 'endret etter ekspor
 
 // --- Liste
 await page.locator('.topp button').first().click();
-await trykk('Gjennomført (1)');
+await trykk(/^Gjennomført/, false);
 await bilde('liste-gjennomfort');
 
 sjekk(feil.length === 0, 'Ingen feil i konsollen' + (feil.length ? ': ' + feil.join('; ') : ''));

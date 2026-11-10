@@ -167,6 +167,10 @@ export interface Befaring {
   endret: number;
   eksportert: number | null;
   kilde: 'manuell' | 'import';
+  /** Venter på nett for opplasting til Dropbox. */
+  dropboxVenter?: boolean;
+  /** Siste feil fra Dropbox-opplasting. */
+  dropboxFeil?: string;
 }
 
 export type PostModus = 'ny' | 'kopi' | 'rediger';

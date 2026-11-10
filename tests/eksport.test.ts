@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { byggEksport, byggOppsummering, bildeFilnavn, mappenavn } from '../src/eksport/format';
 import { storForbokstav, slug } from '../src/tekst';
+import { apiArg } from '../src/eksport/dropbox';
 import type { Befaring, Post } from '../src/motor/typer';
 
 const b: Befaring = {
@@ -64,4 +65,12 @@ describe('tekst', () => {
     expect(storForbokstav('  ANNE-LISE   øverås ')).toBe('Anne-Lise Øverås');
   });
   it('slug', () => expect(slug('Stue vest')).toBe('stue-vest'));
+});
+
+describe('Dropbox', () => {
+  it('Dropbox-API-Arg er ren ASCII med æøå escapet', () => {
+    const a = apiArg({ path: '/Scandic Markiser/Befaringer/2026-11-12 Øyvind Åsheim/befaring.json' });
+    expect(/^[\x00-\x7f]*$/.test(a)).toBe(true);
+    expect(JSON.parse(a).path).toBe('/Scandic Markiser/Befaringer/2026-11-12 Øyvind Åsheim/befaring.json');
+  });
 });

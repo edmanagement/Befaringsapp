@@ -4,7 +4,8 @@ import { db, lagreBefaring, lagrePost, nyPost, posterFor, slettPost, status } fr
 import type { Befaring, Post } from '../motor/typer';
 import { lagKontekst, mangler } from '../motor/motor';
 import { finnProdukt } from '../produkter';
-import { eksporterBefaring } from '../eksport/eksport';
+import { eksporterZip, lagreIDropbox } from '../eksport/eksport';
+import { erTilkoblet } from '../eksport/dropbox';
 import { datoTekst, nyId } from '../tekst';
 import { Topp } from '../ui';
 
@@ -34,7 +35,8 @@ export function BefaringSide({ gaa, id }: { gaa: Gaa; id: string }) {
   const [b, setB] = useState<Befaring | null>(null);
   const [poster, setPoster] = useState<Post[]>([]);
   const [melding, setMelding] = useState('');
-  const [jobber, setJobber] = useState(false);
+  const [jobber, setJobber] = useState('');
+  const [dropbox, setDropbox] = useState<boolean | null>(null);
 
   async function last() {
     const x = await db.befaringer.get(id);
@@ -42,7 +44,12 @@ export function BefaringSide({ gaa, id }: { gaa: Gaa; id: string }) {
     setB(x);
     setPoster(await posterFor(id));
   }
-  useEffect(() => { last(); }, [id]);
+  useEffect(() => { last(); erTilkoblet().then((x) => setDropbox(x.tilkoblet)); }, [id]);
+  useEffect(() => {
+    const ved = () => last();
+    window.addEventListener('dropbox-opplastet', ved);
+    return () => window.removeEventListener('dropbox-opplastet', ved);
+  }, [id]);
   if (!b) return null;
 
   const neste = poster.length ? Math.max(...poster.map((p) => p.rekkefolge)) + 1 : 1;
@@ -67,19 +74,37 @@ export function BefaringSide({ gaa, id }: { gaa: Gaa; id: string }) {
     await slettPost(p);
     last();
   }
-  async function eksporter() {
+  async function klarTilEksport(): Promise<boolean> {
     const uferdige = poster.filter((p) => !p.ferdig || (finnProdukt(p.produktId) && mangler(finnProdukt(p.produktId)!, p).length));
-    if (uferdige.length && !confirm(`${uferdige.length} post(er) er ikke fullført. Eksportere likevel?`)) return;
-    setJobber(true);
+    if (uferdige.length && !confirm(`${uferdige.length} post(er) er ikke fullført. Eksportere likevel?`)) return false;
+    await lagreBefaring({ ...b!, fullfort: true });
+    return true;
+  }
+  async function tilDropbox() {
+    if (!(await klarTilEksport())) return;
+    setJobber('Lagrer i Dropbox …');
     setMelding('');
     try {
-      await lagreBefaring({ ...b!, fullfort: true });
-      const r = await eksporterBefaring(id);
-      setMelding(r === 'avbrutt' ? 'Eksport avbrutt.' : r === 'delt' ? 'Eksportert.' : 'Zip-filen er lastet ned.');
+      const r = await lagreIDropbox(id, (f, t) => setJobber(`Laster opp ${f} av ${t} filer …`));
+      setMelding(r.ok ? `Lagret i Dropbox: ${r.mappe}` : r.venter
+        ? 'Uten nett nå. Befaringen lastes opp automatisk neste gang appen er åpen og har nett.'
+        : 'Dropbox-feil: ' + r.melding);
+    } finally {
+      setJobber('');
+      last();
+    }
+  }
+  async function zip() {
+    if (!(await klarTilEksport())) return;
+    setJobber('Lager zip …');
+    setMelding('');
+    try {
+      const r = await eksporterZip(id);
+      setMelding(r === 'avbrutt' ? 'Eksport avbrutt.' : r === 'delt' ? 'Zip-filen er delt.' : 'Zip-filen er lastet ned.');
     } catch (e) {
       setMelding('Eksport feilet: ' + (e as Error).message);
     } finally {
-      setJobber(false);
+      setJobber('');
       last();
     }
   }
@@ -116,10 +141,19 @@ export function BefaringSide({ gaa, id }: { gaa: Gaa; id: string }) {
         onBlur={() => lagreBefaring(b).then(last)} />
 
       <div className="bunn">
+        {b.dropboxVenter && <div className="varsel">⏳ Venter på nett – lastes opp til Dropbox automatisk når appen er åpen og har nett.</div>}
+        {b.dropboxFeil && !melding && <div className="varsel">⚠ Siste opplasting feilet: {b.dropboxFeil}</div>}
         {melding && <div className="info">{melding}</div>}
-        <button className="knapp hoved" onClick={eksporter} disabled={jobber || !poster.length}>
-          {jobber ? 'Lager zip …' : st === 'eksportert' ? 'Eksporter på nytt' : 'Fullfør og eksporter'}
-        </button>
+        {dropbox ? (
+          <button className="knapp hoved" onClick={tilDropbox} disabled={!!jobber || !poster.length}>
+            {jobber || (st === 'eksportert' ? 'Lagre i Dropbox på nytt' : 'Fullfør og lagre i Dropbox')}
+          </button>
+        ) : (
+          dropbox === false && (
+            <button className="knapp hoved" onClick={() => gaa({ side: 'innstillinger' })}>Koble til Dropbox for å lagre</button>
+          )
+        )}
+        <button className="knapp lav" onClick={zip} disabled={!!jobber || !poster.length}>Last ned som zip (reserve)</button>
       </div>
     </div>
   );
