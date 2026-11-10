@@ -6,7 +6,7 @@ Denne filen forklarer hva befaringsappen eksporterer, slik at en Claude-økt kan
 
 ## Mappestruktur
 
-Hver eksport er én zip med én mappe:
+Hver befaring lagres i Dropbox som en utpakket mappe under **`/Scandic Markiser/Befaringer/`** (knappen «Fullfør og lagre i Dropbox»). Reserve: samme mappe som zip-fil.
 
 ```
 ÅÅÅÅ-MM-DD Fornavn Etternavn/
@@ -16,7 +16,7 @@ Hver eksport er én zip med én mappe:
     01-stue-vest-1.jpg ← <postnr>-<postnavn>-<bildenr>.jpg, maks 1600 px lengste side
 ```
 
-En befaring kan eksporteres flere ganger. Nyeste eksport erstatter den forrige (samme mappenavn).
+En befaring kan lagres flere ganger. Nyeste versjon erstatter filene i mappen (samme mappenavn), og `bilder/` tømmes først.
 
 ## Viktige prinsipper
 
