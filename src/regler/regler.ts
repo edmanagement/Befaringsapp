@@ -89,3 +89,43 @@ export function screenOverMaks(
 export function vindusmarkiseArmlengde(maalt: number): number {
   return Math.ceil(avrund(maalt / 2) / 10 - 1e-9) * 10;
 }
+
+// ---------- Etappe 2 ----------
+
+/** Persienne 25 mm, bredde: nettomål −0,4 cm (4 mm). */
+export const persienne25Bredde = (m: number): RegelResultat => ({ bestilt_cm: sum(m, -0.4), regel: 'Nettomål −0,4 cm (4 mm)' });
+
+/** Lamellgardin, bredde: nettomål −1 cm. */
+export const lamellBredde = (m: number): RegelResultat => ({ bestilt_cm: sum(m, -1), regel: 'Nettomål −1 cm' });
+
+/** Lamellgardin, høyde: til gulv −2 cm, i vinduskarm −1 cm. */
+export function lamellHoyde(m: number, til: 'gulv' | 'karm' | null): RegelResultat {
+  if (til === 'gulv') return { bestilt_cm: sum(m, -2), regel: 'Til gulv −2 cm' };
+  if (til === 'karm') return { bestilt_cm: sum(m, -1), regel: 'I vinduskarm −1 cm' };
+  return { bestilt_cm: avrund(m), regel: 'Velg «til gulv» eller «i vinduskarm» for fratrekk' };
+}
+
+/** Insektsnetting, bredde: −0,2 cm (standard) eller −0,1 cm. */
+export const insektBredde = (m: number, bare1mm: boolean): RegelResultat =>
+  bare1mm ? { bestilt_cm: sum(m, -0.1), regel: '−0,1 cm (1 mm)' } : { bestilt_cm: sum(m, -0.2), regel: '−0,2 cm (2 mm)' };
+
+/** Zipscreen Mini, bredde: målt i lysåpning −1 cm. */
+export const miniBredde = (m: number, lysaapning: boolean): RegelResultat =>
+  lysaapning ? { bestilt_cm: sum(m, -1), regel: 'Lysåpning −1 cm' } : { bestilt_cm: avrund(m), regel: 'Ingen fratrekk (ikke målt i lysåpning)' };
+
+/** Utvendige persienner (Scandic 80/50, Standard 50): +5 cm per side = +10 cm på vindusmålet. */
+export const utvPersienneBredde = (m: number): RegelResultat => ({ bestilt_cm: sum(m, 10), regel: 'Vindusmål +5 cm per side (+10 cm)' });
+
+/** Vindusmarkise, bredde: +10 cm per side (+20), eller +5 per side (+10) ved «vannrett». */
+export const vindusmarkiseBredde = (m: number, vannrett: boolean): RegelResultat =>
+  vannrett
+    ? { bestilt_cm: sum(m, 10), regel: 'Vannrett: vindusmål +5 cm per side (+10 cm)' }
+    : { bestilt_cm: sum(m, 20), regel: 'Vindusmål +10 cm per side (+20 cm)' };
+
+export const vindusmarkiseArmRegel = (m: number): RegelResultat => ({
+  bestilt_cm: vindusmarkiseArmlengde(m),
+  regel: 'Mål / 2, rundet opp til nærmeste 10 cm',
+});
+
+/** Continent 50: bestillingsbredden skal slutte på ,5 (millimeteren). */
+export const slutterPaaFem = (cm: number): boolean => Math.round(cm * 10) % 10 === 5;

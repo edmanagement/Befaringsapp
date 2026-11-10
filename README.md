@@ -11,7 +11,7 @@ npm test           # måleregler, motor og eksport (Vitest)
 npm run build      # lager dist/ for publisering
 ```
 
-Klikktest av hele flyten i mobilstørrelse: `npx vite preview --port 4173` i ett vindu og `node tests/e2e.mjs` i et annet.
+Klikktest av hele flyten i mobilstørrelse: `npx vite preview --port 4173` i ett vindu og `node tests/e2e.mjs` og `node tests/e2e-etappe2.mjs` i et annet.
 
 ## Mappestruktur
 
@@ -37,5 +37,7 @@ Listene ligger i `src/valglister/`. Hvert valg er teksten slik den står i eBest
 - **Plissé-fargenumre:** i `honeycell.ts`, under `plisseDuker`. Bytt `p('Basel')` med `{ navn: 'Basel', numre: ['1234', '5678'], navnIEbest: true }`.
 - **Grenser per plissetype:** fyll inn `src/grenser/plissetyper.ts`, f.eks. `P1600: { maksBredde: 200, maksHoyde: 220 }`.
 - **Standardvalg** ligger i produktfilen (`standard: '…'`).
+- **Høydetrinn** for persienner ligger i `src/valglister/hoydetrinn.ts` (høyde + dekkassehøyde per trinn).
+- **TODO-lister:** søk etter `TODO: fyll inn fra eBest` for å finne valg som ikke er lagt inn ennå (plissé-fargenumre, lamellfarger gr. 2–4, betjening-undervalg, vindsikring, strømkabel for vindus- og fasademarkise, stativfarger for Verano kassettmarkiser og Kurvmarkise, skinne- og beinfarge for Scandic 80).
 
 Kjør `npm test` og `npm run build` etter endringer, og publiser `dist/` på nytt.

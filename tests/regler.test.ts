@@ -74,3 +74,59 @@ describe('Vindusmarkise armlengde', () => {
     expect(vindusmarkiseArmlengde(119)).toBe(60);
   });
 });
+
+import {
+  persienne25Bredde, lamellBredde, lamellHoyde, insektBredde, miniBredde, utvPersienneBredde,
+  vindusmarkiseBredde, vindusmarkiseArmRegel, slutterPaaFem,
+} from '../src/regler/regler';
+import { foreslaTrinn } from '../src/motor/motor';
+import { scandic50, scandic80, roulett25, continent50 } from '../src/valglister/hoydetrinn';
+
+describe('Etappe 2 – måleregler', () => {
+  it('persienne 25: −0,4', () => expect(persienne25Bredde(100).bestilt_cm).toBe(99.6));
+  it('lamell: bredde −1, høyde gulv −2 / karm −1', () => {
+    expect(lamellBredde(250.3).bestilt_cm).toBe(249.3);
+    expect(lamellHoyde(240, 'gulv').bestilt_cm).toBe(238);
+    expect(lamellHoyde(150, 'karm').bestilt_cm).toBe(149);
+  });
+  it('insektsnetting: −0,2 standard, −0,1 valgfritt', () => {
+    expect(insektBredde(80, false).bestilt_cm).toBe(79.8);
+    expect(insektBredde(80, true).bestilt_cm).toBe(79.9);
+  });
+  it('Zipscreen Mini: lysåpning −1', () => {
+    expect(miniBredde(120, true).bestilt_cm).toBe(119);
+    expect(miniBredde(120, false).bestilt_cm).toBe(120);
+  });
+  it('utvendig persienne: +10', () => expect(utvPersienneBredde(118.5).bestilt_cm).toBe(128.5));
+  it('vindusmarkise: +20, vannrett +10', () => {
+    expect(vindusmarkiseBredde(150, false).bestilt_cm).toBe(170);
+    expect(vindusmarkiseBredde(150, true).bestilt_cm).toBe(160);
+    expect(vindusmarkiseArmRegel(155).bestilt_cm).toBe(80);
+  });
+  it('Continent: slutter på ,5', () => {
+    expect(slutterPaaFem(119.5)).toBe(true);
+    expect(slutterPaaFem(119.4)).toBe(false);
+    expect(slutterPaaFem(120)).toBe(false);
+  });
+});
+
+describe('Høydetrinn', () => {
+  it('forslag = minste trinn ≥ målt (uten dekkasse)', () => {
+    expect(foreslaTrinn(roulett25, 120)?.cm).toBe(120.0);
+    expect(foreslaTrinn(roulett25, 120.1)?.cm).toBe(122.1);
+    expect(foreslaTrinn(roulett25, 999)).toBeNull();
+  });
+  it('forslag med dekkasse: trinnets dekkassehøyde legges til målt', () => {
+    // Scandic 50, målt 85: 88,4 (kasse 10) er under 95 → første trinn med cm ≥ 85 + kasse: 96,8 (kasse 12, 96,8 < 97) → 101,0 (kasse 12, ≥ 97)
+    expect(foreslaTrinn(scandic50, 85, true)?.cm).toBe(101.0);
+    expect(foreslaTrinn(scandic50, 85, false)?.cm).toBe(88.4);
+    // Scandic 80, målt 150: 165,5 (24) er under 174; 172,7 (25) under 175; 179,9 (25) ≥ 175
+    expect(foreslaTrinn(scandic80, 150, true)?.cm).toBe(179.9);
+  });
+  it('tabellene stemmer med skjermbildet', () => {
+    expect(roulett25.length).toBe(124);
+    expect(continent50.at(-1)).toEqual({ cm: 219.8, dekkasse: 12 });
+    expect(scandic50.find((t) => t.cm === 256.4)?.dekkasse).toBe(18);
+    expect(scandic80.find((t) => t.cm === 403.1)?.dekkasse).toBe(44);
+  });
+});

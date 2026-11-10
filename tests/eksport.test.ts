@@ -74,3 +74,24 @@ describe('Dropbox', () => {
     expect(JSON.parse(a).path).toBe('/Scandic Markiser/Befaringer/2026-11-12 Øyvind Åsheim/befaring.json');
   });
 });
+
+import { lesImport } from '../src/db/import';
+
+describe('Import av befaringer.json', () => {
+  const fil = JSON.stringify({ befaringer: [
+    { navn: 'kari hansen', telefon: '+47 912 34 567', adresse: 'Gata 2', dato: '2026-11-12 10:00', produktinteresse: 'zipscreen, markise' },
+    { navn: 'Per Pedersen', telefon: '98765432', dato: '13.11.2026 14:30', produktinteresse: ['Pergola'] },
+    { navn: 'Kari Hansen igjen', telefon: '91234567', dato: '2026-11-12T16:00' },
+    { adresse: 'uten navn' },
+  ] });
+  it('importerer, normaliserer og hopper over duplikater', () => {
+    const r = lesImport(fil, [{ telefon: '987 65 432', dato: '2026-11-13T09:00' }]);
+    expect(r.nye.map((b) => b.navn)).toEqual(['Kari Hansen']);
+    expect(r.nye[0]).toMatchObject({ dato: '2026-11-12T10:00', produktinteresse: ['Zipscreen', 'Markise'], kilde: 'import' });
+    expect(r.duplikater).toBe(2); // Per finnes fra før, Kari igjen = samme telefon + dag
+    expect(r.ugyldige).toBe(1);
+  });
+  it('godtar også en ren liste', () => {
+    expect(lesImport('[{"navn":"a b","telefon":"1"}]', []).nye[0].navn).toBe('A B');
+  });
+});

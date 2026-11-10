@@ -1,7 +1,7 @@
 // Bygger befaring.json og oppsummering.md. Rene funksjoner (ingen DB), testes i tests/eksport.test.ts.
 // Endrer du formatet: øk SKJEMAVERSJON og oppdater EKSPORTFORMAT.md.
 import type { Befaring, Kilde, Maaltype, Post, Status, Verdi } from '../motor/typer';
-import { alleVarsler, ebestTekst, erSynlig, lagKontekst, mangler } from '../motor/motor';
+import { alleVarsler, ebestTekst, erSynlig, lagKontekst, maaltypeFor, mangler } from '../motor/motor';
 import { finnProdukt } from '../produkter';
 import { cmTekst, endringTekst } from '../regler/tall';
 import { isoDag, slug, trygtFilnavn } from '../tekst';
@@ -30,6 +30,9 @@ export interface MaalUt {
   beregnet_cm: number | null;
   bestillingsmaal_cm: number | null;
   manuelt_overstyrt: boolean;
+  /** Feltet har faste høydetrinn: beregnet_cm er forslaget, bestillingsmaal_cm trinnet som ble valgt. */
+  hoydetrinn?: boolean;
+  valgt_trinn_cm?: number | null;
 }
 
 export interface PostUt {
@@ -115,7 +118,8 @@ export function byggPost(p: Post, nr: number): PostUt {
         ledetekst: s.ledetekst,
         ebest_felt: s.ebestFelt ?? null,
         maalt_cm: g.maalt_cm,
-        maaltype: s.maaltype,
+        maaltype: maaltypeFor(s, (a) => k.avkrysset(s.id, a)),
+        ...(s.trinn ? { hoydetrinn: true, valgt_trinn_cm: g.bestilt_cm } : {}),
         avkryssinger: (s.avkryssinger ?? [])
           .filter((a) => (a.vis ? a.vis(k) : true))
           .map((a) => ({ id: a.id, tekst: a.tekst, avkrysset: k.avkrysset(s.id, a.id) })),
@@ -190,6 +194,14 @@ export function byggOppsummering(e: EksportUt): string {
       for (const m of p.maal) {
         const av = m.avkryssinger.filter((a) => a.avkrysset).map((a) => a.tekst);
         const diff = m.maalt_cm !== null && m.bestillingsmaal_cm !== null ? ` (${endringTekst(m.bestillingsmaal_cm - m.maalt_cm)})` : '';
+        if (m.hoydetrinn) {
+          l.push(
+            `- ${m.ledetekst}: **høydetrinn ${cmTekst(m.bestillingsmaal_cm)}**` +
+              (m.maalt_cm !== null ? ` (målt ${cmTekst(m.maalt_cm)}${m.beregnet_cm !== null ? `, forslag ${cmTekst(m.beregnet_cm)}` : ''})` : '') +
+              (m.regel ? ` – ${m.regel}` : '') + (av.length ? ` – avkrysset: ${av.join(', ')}` : ''),
+          );
+          continue;
+        }
         l.push(
           `- ${m.ledetekst}: målt ${cmTekst(m.maalt_cm)} (${m.maaltype}) → **bestilles ${cmTekst(m.bestillingsmaal_cm)}**${diff}` +
             (m.manuelt_overstyrt ? ` – _manuelt overstyrt, beregnet var ${cmTekst(m.beregnet_cm)}_` : '') +

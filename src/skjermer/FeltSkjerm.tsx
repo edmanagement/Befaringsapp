@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AvkryssingSteg, DukGruppe, DukSteg, DukVerdi, MaalSteg, MaalSvar, Post, Produkt, Steg, Svar, TallSteg, TekstSteg, ValgSteg,
 } from '../motor/typer';
-import { lagKontekst } from '../motor/motor';
+import { lagKontekst, maaltypeFor } from '../motor/motor';
 import { cmTekst, endringTekst, lesMaal, lesTall } from '../regler/tall';
 import { Varsler } from '../ui';
 
@@ -78,7 +78,7 @@ function ValgFelt({ produkt, post, steg, settSvar, neste }: FeltProps & { steg: 
 
   return (
     <>
-      {!alle.length && <div className="info">Ingen valg ennå – svar på forrige spørsmål først, eller skriv selv.</div>}
+      {!alle.length && !steg.hjelp && <div className="info">Ingen valg her – skriv selv.</div>}
       <div className={kolonner}>{hurtig.map(knapp)}</div>
       {flere.length > 0 && (
         <div style={{ marginTop: 10 }}>
@@ -99,6 +99,11 @@ function ValgFelt({ produkt, post, steg, settSvar, neste }: FeltProps & { steg: 
           <button className="knapp hoved" onClick={neste}>
             Neste{g.kilde === 'standard' ? ` (${valgt})` : ''}
           </button>
+        </div>
+      )}
+      {valgt === null && steg.valgfri && (
+        <div className="bunn">
+          <button className="knapp" onClick={neste}>Hopp over</button>
         </div>
       )}
     </>
@@ -188,7 +193,10 @@ function DukFelt({ produkt, post, steg, settSvar, neste }: FeltProps & { steg: D
   const g = k.gjeldende(steg.id);
   const grupper: DukGruppe[] = steg.grupper(k);
   const naa = g.verdi && typeof g.verdi === 'object' ? (g.verdi as DukVerdi) : null;
-  const [gruppe, setGruppe] = useState<DukGruppe | null>(naa ? grupper.find((x) => x.navn === naa.kolleksjon) ?? null : null);
+  const [gruppe, setGruppe] = useState<DukGruppe | null>(
+    naa ? grupper.find((x) => x.navn === naa.kolleksjon) ?? null : grupper.length === 1 ? grupper[0] : null,
+  );
+  const [sokGruppe, setSokGruppe] = useState('');
   const [sok, setSok] = useState('');
   const skrevet = g.kilde === 'skriv_selv' ? String(g.verdi) : '';
 
@@ -238,12 +246,17 @@ function DukFelt({ produkt, post, steg, settSvar, neste }: FeltProps & { steg: D
 
   return (
     <>
-      <button className="knapp lav" onClick={() => setGruppe(null)}>‹ {gruppe.navn} – bytt</button>
+      {grupper.length > 1 && <button className="knapp lav" onClick={() => setGruppe(null)}>‹ {gruppe.navn} – bytt</button>}
+      {grupper.length === 1 && <p className="liten">{gruppe.navn}</p>}
       {gruppe.merknad && <div className="info">{gruppe.merknad}</div>}
       <div style={{ height: 12 }} />
+      {gruppe.numre.length > 30 && (
+        <input className="inn sok" placeholder="Skriv fargenummer …" inputMode="search" autoFocus value={sokGruppe}
+          onChange={(e) => setSokGruppe(e.target.value)} aria-label="Søk fargenummer" />
+      )}
       {gruppe.numre.length > 0 ? (
-        <div className="valg tre">
-          {gruppe.numre.map((n) => (
+        <div className={`valg ${Math.max(...gruppe.numre.map((x) => x.length)) > 6 ? 'to' : 'tre'}`}>
+          {gruppe.numre.filter((n) => n.toLowerCase().replace(/\s/g, '').includes(sokGruppe.toLowerCase().replace(/\s/g, ''))).map((n) => (
             <button key={n} className={`knapp lav ${naa?.kolleksjon === gruppe.navn && naa.nummer === n ? 'valgt' : ''}`} onClick={() => velg(gruppe, n)}>{n}</button>
           ))}
         </div>
@@ -300,7 +313,8 @@ function MaalFelt({ produkt, post, steg, settMaal, neste }: FeltProps & { steg: 
         </div>
       </div>
       <p className="liten">
-        Måltype: <b>{steg.maaltype}</b> · tastes i <b>{enhet}</b>{enhet === 'mm' ? ', lagres i cm' : ''}
+        {steg.trinn ? 'Målt høyde er valgfri – brukes til å markere forslag. ' : ''}
+        Måltype: <b>{maaltypeFor(steg, (a) => k.avkrysset(steg.id, a))}</b> · tastes i <b>{enhet}</b>{enhet === 'mm' ? ', lagres i cm' : ''}
       </p>
 
       {(steg.avkryssinger ?? []).filter((a) => (a.vis ? a.vis(k) : true)).map((a) => {
@@ -313,7 +327,10 @@ function MaalFelt({ produkt, post, steg, settMaal, neste }: FeltProps & { steg: 
         );
       })}
 
-      {g.maalt_cm !== null && g.beregnet && (
+      {steg.trinn && <TrinnListe steg={steg} k={k} forslag={g.beregnet?.bestilt_cm ?? null} valgt={g.bestilt_cm}
+        velg={(cm) => { settMaal({ ...lagret, trinn_cm: cm }); neste(); }} />}
+
+      {!steg.trinn && g.maalt_cm !== null && g.beregnet && (
         <div className="resultat" aria-live="polite">
           Målt {cmTekst(g.maalt_cm)} cm → bestilles
           <strong>{cmTekst(g.bestilt_cm)} cm</strong>
@@ -323,7 +340,7 @@ function MaalFelt({ produkt, post, steg, settMaal, neste }: FeltProps & { steg: 
         </div>
       )}
 
-      {g.maalt_cm !== null && (
+      {!steg.trinn && g.maalt_cm !== null && (
         <button className={`sjekk ${overstyr ? 'paa' : ''}`} onClick={() => {
           const ny = !overstyr;
           setOverstyr(ny);
@@ -342,6 +359,34 @@ function MaalFelt({ produkt, post, steg, settMaal, neste }: FeltProps & { steg: 
 
       <div className="bunn">
         <button className="knapp hoved" disabled={!ok} onClick={neste}>Neste</button>
+      </div>
+    </>
+  );
+}
+
+// ---------- Høydetrinn ----------
+
+function TrinnListe({ steg, k, forslag, valgt, velg }: {
+  steg: MaalSteg; k: ReturnType<typeof lagKontekst>; forslag: number | null; valgt: number | null; velg: (cm: number) => void;
+}) {
+  const trinn = steg.trinn!(k);
+  const boks = useRef<HTMLDivElement>(null);
+  const maal = valgt ?? forslag;
+  useEffect(() => {
+    const el = boks.current?.querySelector<HTMLElement>(`[data-cm="${maal}"]`);
+    if (el && boks.current) boks.current.scrollTop = el.offsetTop - boks.current.offsetTop - 60;
+  }, [maal]);
+  return (
+    <>
+      {forslag !== null && <div className="resultat">Forslag: <strong>{cmTekst(forslag)} cm</strong><div className="regel">Trykk på trinnet du vil bestille.</div></div>}
+      <div className="trinnliste" ref={boks} role="listbox" aria-label="Høydetrinn">
+        {trinn.map((t) => (
+          <button key={t.cm} data-cm={t.cm} role="option" aria-selected={valgt === t.cm}
+            className={`trinn ${valgt === t.cm ? 'valgt' : ''} ${forslag === t.cm ? 'forslag' : ''}`} onClick={() => velg(t.cm)}>
+            <span>{cmTekst(t.cm)} cm</span>
+            <span className="k">{forslag === t.cm ? '★ forslag' : ''}{t.dekkasse !== undefined ? ` dekkasse ${t.dekkasse}` : ''}</span>
+          </button>
+        ))}
       </div>
     </>
   );

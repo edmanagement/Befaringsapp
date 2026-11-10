@@ -178,3 +178,14 @@ textarea.inn { min-height: 160px; resize: vertical; }
 .rad > * { flex: 1; }
 .kunde { font-size: 17px; line-height: 1.5; margin-bottom: 14px; }
 .kunde a { font-weight: 600; }
+
+.trinnliste { max-height: 46vh; overflow-y: auto; border: 2px solid var(--kant); border-radius: var(--radius); }
+.trinn {
+  display: flex; justify-content: space-between; align-items: center; width: 100%;
+  min-height: 54px; padding: 8px 16px; border: none; border-bottom: 1px solid var(--kant);
+  background: var(--flate); font-size: 21px; font-weight: 700; text-align: left;
+}
+.trinn .k { font-size: 14px; font-weight: 600; color: var(--tekst-2); }
+.trinn.forslag { outline: 3px dashed var(--gul); outline-offset: -3px; }
+.trinn.valgt { background: var(--gul); color: var(--gul-tekst); }
+.trinn.valgt .k { color: var(--gul-tekst); }

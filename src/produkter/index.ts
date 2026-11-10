@@ -3,24 +3,28 @@ import type { Kategori, Produkt } from '../motor/typer';
 import { honeycell } from './honeycell';
 import { screenV550 } from './screen-v550';
 import { generelt } from './generelt';
+import { insektsnetting, lamellgardin, persienne25, rullegardin } from './interior';
+import {
+  continent50Produkt, fasademarkise, scandic50Produkt, scandic80Produkt, standard50Produkt, terrassemarkise, vindusmarkise, zipscreenMini,
+} from './eksterior';
 
 export const produkter: Produkt[] = [
   // Interiør
   honeycell,
-  generelt('persienne-25', 'Persienne 25 mm', 'Interiør'),
-  generelt('rullegardin', 'Rullegardin', 'Interiør'),
-  generelt('lamellgardin', 'Lamellgardin', 'Interiør'),
-  generelt('insektsnetting', 'Insektsnetting', 'Interiør'),
+  persienne25,
+  rullegardin,
+  lamellgardin,
+  insektsnetting,
   // Eksteriør
   screenV550,
-  generelt('terrassemarkise', 'Terrassemarkise', 'Eksteriør'),
-  generelt('scandic-80', 'Scandic 80', 'Eksteriør'),
-  generelt('scandic-50', 'Scandic 50', 'Eksteriør'),
-  generelt('standard-50', 'Standard 50', 'Eksteriør'),
-  generelt('vindusmarkise', 'Vindusmarkise', 'Eksteriør'),
-  generelt('zipscreen-mini', 'Zipscreen Mini', 'Eksteriør'),
-  generelt('continent-50', 'Continent 50', 'Eksteriør'),
-  generelt('fasademarkise', 'Fasademarkise', 'Eksteriør'),
+  terrassemarkise,
+  scandic80Produkt,
+  scandic50Produkt,
+  standard50Produkt,
+  vindusmarkise,
+  zipscreenMini,
+  continent50Produkt,
+  fasademarkise,
   generelt('dukskift', 'Dukskift', 'Eksteriør'),
   generelt('pergola', 'Pergola', 'Eksteriør'),
   generelt('levegg', 'Levegg', 'Eksteriør'),

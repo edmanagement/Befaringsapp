@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { lesImport } from '../db/import';
 import type { Gaa } from '../App';
 import { db, status } from '../db/db';
 import type { Befaring, Status } from '../motor/typer';
@@ -10,6 +11,26 @@ interface Rad { b: Befaring; st: Status; antall: number }
 export function Liste({ gaa }: { gaa: Gaa }) {
   const [rader, setRader] = useState<Rad[] | null>(null);
   const [fane, setFane] = useState<'kommende' | 'gjennomfort'>('kommende');
+  const [melding, setMelding] = useState('');
+  const [teller, setTeller] = useState(0);
+  const fil = useRef<HTMLInputElement>(null);
+
+  async function importer(f: File | undefined) {
+    if (!f) return;
+    try {
+      const eks = await db.befaringer.toArray();
+      const r = lesImport(await f.text(), eks);
+      await db.befaringer.bulkAdd(r.nye);
+      setMelding(`Importert ${r.nye.length} befaring${r.nye.length === 1 ? '' : 'er'}.` +
+        (r.duplikater ? ` ${r.duplikater} fantes fra før.` : '') + (r.ugyldige ? ` ${r.ugyldige} rader manglet navn og telefon.` : ''));
+      setFane('kommende');
+      setTeller((x) => x + 1);
+    } catch (e) {
+      setMelding('Kunne ikke importere: ' + (e as Error).message);
+    } finally {
+      if (fil.current) fil.current.value = '';
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -21,7 +42,7 @@ export function Liste({ gaa }: { gaa: Gaa }) {
       }
       setRader(ut);
     })();
-  }, []);
+  }, [teller]);
 
   if (!rader) return null;
   const tid = (b: Befaring) => lesDato(b.dato)?.getTime() ?? Number.MAX_SAFE_INTEGER;
@@ -40,6 +61,10 @@ export function Liste({ gaa }: { gaa: Gaa }) {
         hoyre={<button className="knapp tekstknapp" onClick={() => gaa({ side: 'innstillinger' })} aria-label="Innstillinger">⚙︎</button>}
       />
       <button className="knapp hoved" onClick={() => gaa({ side: 'ny' })}>+ Ny befaring</button>
+      <div style={{ height: 10 }} />
+      <input ref={fil} className="skjult" type="file" accept=".json,application/json" data-testid="import" onChange={(e) => importer(e.target.files?.[0])} />
+      <button className="knapp lav" onClick={() => fil.current?.click()}>Importer befaringer.json</button>
+      {melding && <div className="info" style={{ marginTop: 10 }}>{melding}</div>}
       <div style={{ height: 14 }} />
       <div className="faner">
         <button className={`knapp lav ${fane === 'kommende' ? 'valgt' : ''}`} onClick={() => setFane('kommende')}>

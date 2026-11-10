@@ -25,6 +25,8 @@ export interface MaalSvar {
   avkryssinger: Record<string, boolean>;
   /** Manuelt overstyrt bestillingsmål i cm. null = bruk beregnet. */
   manuelt_cm: number | null;
+  /** Valgt høydetrinn i cm (bare for felt med høydetrinn). */
+  trinn_cm?: number | null;
 }
 
 /** Lesetilgang til gjeldende verdier i en post. Sendes til regler, betingelser og varsler. */
@@ -120,9 +122,19 @@ export interface DukSteg extends StegFelles {
   gruppeLedetekst?: string;
 }
 
+export interface Hoydetrinn {
+  cm: number;
+  /** Dekkassehøyde for dette trinnet (utvendige persienner). */
+  dekkasse?: number;
+}
+
 export interface MaalSteg extends StegFelles {
   type: 'maal';
-  maaltype: Maaltype;
+  maaltype: Maaltype | ((avkrysset: (id: string) => boolean) => Maaltype);
+  /** Faste høydetrinn fra eBest. Da velger jeg trinnet selv; målt verdi er valgfri og brukes bare til å markere forslag. */
+  trinn?: (k: K) => Hoydetrinn[];
+  /** Avkryssing som legger trinnets dekkassehøyde til målt høyde før forslaget finnes. */
+  trinnTilleggId?: string;
   avkryssinger?: { id: string; tekst: string; standard?: boolean; vis?: (k: K) => boolean }[];
   regel: (maalt_cm: number, k: K, avkrysset: (id: string) => boolean) => RegelResultat;
   min?: number;

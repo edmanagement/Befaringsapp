@@ -2,9 +2,19 @@
 // og svarer på: hva er gjeldende verdi, hvilke skjermer skal vises, hva mangler.
 
 import type {
-  DukGruppe, DukVerdi, K, Kilde, MaalSteg, MaalSvar, Post, Produkt, RegelResultat, Steg, ValgSteg, Verdi,
+  DukGruppe, DukVerdi, Hoydetrinn, K, Kilde, Maaltype, MaalSteg, MaalSvar, Post, Produkt, RegelResultat, Steg, ValgSteg, Verdi,
 } from './typer';
-import { avrund } from '../regler/tall';
+import { avrund, cmTekst } from '../regler/tall';
+
+/** Minste trinn som er minst målt høyde + tillegg (dekkasse for trinnet, hvis valgt). */
+export function foreslaTrinn(trinn: Hoydetrinn[], maalt: number, medDekkasse: boolean): Hoydetrinn | null {
+  for (const t of trinn) if (t.cm + 1e-9 >= maalt + (medDekkasse ? t.dekkasse ?? 0 : 0)) return t;
+  return null;
+}
+
+export function maaltypeFor(s: MaalSteg, avkrysset: (id: string) => boolean): Maaltype {
+  return typeof s.maaltype === 'function' ? s.maaltype(avkrysset) : s.maaltype;
+}
 
 export interface Gjeldende {
   verdi: Verdi;
@@ -103,6 +113,23 @@ export function lagKontekst(produkt: Produkt, post: Pick<Post, 'svar' | 'maal'>)
     const m: MaalSvar | undefined = post.maal[id];
     const maalt = m?.maalt_cm ?? null;
     let beregnet: RegelResultat | null = null;
+    if (s && s.type === 'maal' && s.trinn) {
+      // Høydetrinn: forslaget er beregnet, bestillingsmålet er trinnet jeg valgte.
+      if (maalt !== null) {
+        const medKasse = s.trinnTilleggId ? avkrysset(id, s.trinnTilleggId) : false;
+        const t = foreslaTrinn(s.trinn(k), maalt, medKasse);
+        if (t) {
+          beregnet = {
+            bestilt_cm: t.cm,
+            regel: medKasse && t.dekkasse !== undefined
+              ? `Nærmeste trinn over målt ${cmTekst(maalt)} + dekkasse ${t.dekkasse} cm`
+              : `Nærmeste trinn over målt ${cmTekst(maalt)}`,
+          };
+        }
+      }
+      const valgt = m?.trinn_cm ?? null;
+      return { maalt_cm: maalt, beregnet, bestilt_cm: valgt, manuelt_overstyrt: false };
+    }
     if (s && s.type === 'maal' && maalt !== null) {
       beregnet = s.regel(maalt, k, (aid) => avkrysset(id, aid));
     }
