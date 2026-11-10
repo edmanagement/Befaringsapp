@@ -1,0 +1,18 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 390, height: 844 } });
+const feil = []; page.on('pageerror', (e) => feil.push(e.message));
+page.on('dialog', (d) => d.accept());
+await page.goto('http://localhost:4173/');
+const fil = JSON.stringify([{ navn: 'Kari Test', telefon: '91234567', dato: '2099-01-01T10:00' }, { navn: 'Ola Test', telefon: '92345678', dato: '2099-01-02T10:00' }]);
+const imp = async () => { await page.setInputFiles('[data-testid=import]', { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(fil) }); await page.waitForTimeout(400); };
+await imp();
+console.log(await page.locator('.info').innerText());
+await page.getByRole('button', { name: 'Slett Kari Test' }).click(); await page.waitForTimeout(300);
+console.log(await page.locator('.info').innerText(), '| kort:', await page.locator('.kort').count());
+await page.screenshot({ path: '/tmp/slett.png' });
+await imp();
+console.log(await page.locator('.info').innerText(), '| kort:', await page.locator('.kort').count());
+await page.locator('.kort', { hasText: 'Ola Test' }).click();
+await page.getByRole('button', { name: 'Slett befaring' }).click(); await page.waitForTimeout(400);
+console.log('etter slett fra side, kort:', await page.locator('.kort').count(), 'feil:', feil.length);
+await b.close();

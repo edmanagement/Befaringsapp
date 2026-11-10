@@ -171,6 +171,7 @@ Appen kan importere bookede befaringer (knappen «Importer befaringer.json» på
 - `produktinteresse`: liste eller kommaseparert tekst. Bruk CRM-kategoriene: Dukskift, Garasjeport, Interiørgardin, Markise, Pergola, Utvendig persienne, Varmepumpe, Vindskjerming, Zipscreen, Annet.
 - `kommentar` blir sluttkommentaren.
 - Navn får stor forbokstav. En befaring med samme telefon (bare sifre, uten +47) og samme dag som en som finnes fra før, hoppes over.
+- Gjennomførte (fullført eller lagret i Dropbox) og slettede befaringer kommer ikke tilbake: samme telefon hoppes over til og med 30 dager etter den gamle datoen. Appen husker slettede befaringer (telefon og dato).
 
 ## Endringslogg
 
@@ -178,3 +179,4 @@ Appen kan importere bookede befaringer (knappen «Importer befaringer.json» på
 - **1** (10.11.2026, etappe 2): alle produkter unntatt dukskift, pergola, levegg, glassløsninger og garasjeport har eget skjema (`produkt.skjemaversjon: 2`). Nye mål-felt `hoydetrinn` og `valgt_trinn_cm`. Import av befaringer.json. Formatet er bakoverkompatibelt, så skjemaversjonen er uendret.
 - **1** (10.11.2026): grenser fra prisliste 2026 – Large bunnlist over 300 cm, Continent 50 maks 180 cm / 3,2 m², Persienne 25 maks 260 cm, maksmål per plissetype. Nytt mål `skra_lengde` på Honeycell/plissé ved skråvindu.
 - **1** (10.11.2026, eBest-data): alle valgtekster ordrett fra eBest. Duk-tekst i eBest-format. Nye produkter med eget skjema: kassettmarkise, kurvmarkise, dukskift, pergola, levegg, sidemarkise, glassløsninger, garasjeport – ingen produkter bruker lenger generelt skjema. Nye felt `betjening2`, `kobles_venstre/hoyre`, Scandic 80 skinne-/beinfarge. Lamell skrå: bare C og D, uten fratrekk. Formatet er bakoverkompatibelt.
+- **1** (10.11.2026): befaringer kan slettes (✕ i listen eller «Slett befaring»). Import hopper over gjennomførte og slettede (samme telefon, inntil 30 dager etter).

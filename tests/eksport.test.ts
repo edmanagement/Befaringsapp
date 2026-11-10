@@ -95,3 +95,27 @@ describe('Import av befaringer.json', () => {
     expect(lesImport('[{"navn":"a b","telefon":"1"}]', []).nye[0].navn).toBe('A B');
   });
 });
+
+describe('import: gjennomførte og slettede kommer ikke tilbake', () => {
+  const fil = JSON.stringify([
+    { navn: 'Gjort', telefon: '91300262', dato: '2026-11-10T17:00' },
+    { navn: 'Slettet', telefon: '+47 928 52 330', dato: '2026-11-10T18:00' },
+    { navn: 'Ny', telefon: '93658038', dato: '2026-11-11T13:00' },
+    { navn: 'Gjort, ny tid', telefon: '913 00 262', dato: '2026-11-14T10:00' },
+    { navn: 'Gjort, mye senere', telefon: '91300262', dato: '2027-03-01T10:00' },
+  ]);
+  it('hopper over gjennomført (også ny dato innen 30 dager) og slettet', () => {
+    const r = lesImport(fil,
+      [{ telefon: '913 00 262', dato: '2026-11-10T17:00', fullfort: true, eksportert: null }],
+      [{ telefon: '92852330', dato: '2026-11-10T18:00' }]);
+    expect(r.nye.map((b) => b.navn)).toEqual(['Ny', 'Gjort, Mye Senere']);
+    expect(r.avsluttet).toBe(3);
+  });
+  it('eksportert teller som gjennomført, planlagt gjør ikke', () => {
+    const r = lesImport(fil, [{ telefon: '93658038', dato: '2026-11-11T13:00', fullfort: false, eksportert: 123 }]);
+    expect(r.nye.map((b) => b.navn)).not.toContain('Ny');
+    const r2 = lesImport(fil, [{ telefon: '93658038', dato: '2026-11-11T13:00', fullfort: false, eksportert: null }]);
+    expect(r2.duplikater).toBe(1);
+    expect(r2.avsluttet).toBe(0);
+  });
+});

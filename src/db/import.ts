@@ -38,22 +38,39 @@ function normInteresse(p: ImportRad['produktinteresse']): string[] {
     .map((x) => produktinteresser.find((k) => k.toLowerCase() === x.toLowerCase()) ?? x);
 }
 
+/** Dager etter en gjennomført/slettet befaring der samme telefonnummer regnes som samme sak. */
+export const SPERRE_DAGER = 30;
+
 export function lesImport(
   tekst: string,
-  eksisterende: Pick<Befaring, 'telefon' | 'dato'>[],
-): { nye: Befaring[]; duplikater: number; ugyldige: number } {
+  eksisterende: (Pick<Befaring, 'telefon' | 'dato'> & Partial<Pick<Befaring, 'fullfort' | 'eksportert'>>)[],
+  slettede: Pick<Befaring, 'telefon' | 'dato'>[] = [],
+): { nye: Befaring[]; duplikater: number; ugyldige: number; avsluttet: number } {
   const data = JSON.parse(tekst);
   const rader: ImportRad[] = Array.isArray(data) ? data : Array.isArray(data?.befaringer) ? data.befaringer : [];
   if (!rader.length) throw new Error('Fant ingen befaringer i filen.');
   const nokkel = (tlf: string, dato: string) => `${normTelefon(tlf)}|${dag(dato)}`;
   const sett = new Set(eksisterende.map((b) => nokkel(b.telefon, b.dato)));
+  // Gjennomførte og slettede befaringer: samme telefon sperres fram til SPERRE_DAGER etter datoen.
+  const sperret = new Map<string, number>();
+  const sperr = (tlf: string, dato: string) => {
+    const t = normTelefon(tlf);
+    if (!t) return;
+    const grense = (Date.parse(dag(dato) || '9999-12-31') || 0) + SPERRE_DAGER * 864e5;
+    sperret.set(t, Math.max(sperret.get(t) ?? 0, grense));
+  };
+  for (const b of eksisterende) if (b.fullfort || (b.eksportert ?? null) !== null) sperr(b.telefon, b.dato);
+  for (const b of slettede) sperr(b.telefon, b.dato);
   const nye: Befaring[] = [];
   let duplikater = 0;
+  let avsluttet = 0;
   let ugyldige = 0;
   for (const r of rader) {
     if (!r || typeof r !== 'object' || (!r.navn && !r.telefon)) { ugyldige++; continue; }
     const dato = normDato(r.dato);
     const n = nokkel(r.telefon ?? '', dato);
+    const grense = sperret.get(normTelefon(r.telefon ?? ''));
+    if (grense !== undefined && (Date.parse(dag(dato)) || 0) <= grense) { avsluttet++; continue; }
     if (r.telefon && sett.has(n)) { duplikater++; continue; }
     sett.add(n);
     const naa = Date.now();
@@ -63,5 +80,5 @@ export function lesImport(
       sluttkommentar: (r.kommentar ?? '').trim(), fullfort: false, opprettet: naa, endret: naa, eksportert: null, kilde: 'import',
     });
   }
-  return { nye, duplikater, ugyldige };
+  return { nye, duplikater, ugyldige, avsluttet };
 }

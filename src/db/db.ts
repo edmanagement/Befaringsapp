@@ -47,6 +47,28 @@ export async function slettPost(p: Post): Promise<void> {
   });
 }
 
+export interface SlettetBefaring { telefon: string; dato: string; navn: string }
+
+/** Befaringer som er slettet. Huskes, så de ikke kommer tilbake ved neste import. */
+export async function hentSlettede(): Promise<SlettetBefaring[]> {
+  return ((await db.meta.get('slettede'))?.verdi as SlettetBefaring[]) ?? [];
+}
+
+/** Sletter befaringen med poster og bilder fra telefonen (ikke fra Dropbox). */
+export async function slettBefaring(b: Befaring): Promise<void> {
+  await db.transaction('rw', db.befaringer, db.poster, db.bilder, db.meta, async () => {
+    const poster = await db.poster.where('befaringId').equals(b.id).toArray();
+    for (const p of poster) await db.bilder.where('postId').equals(p.id).delete();
+    await db.poster.where('befaringId').equals(b.id).delete();
+    await db.befaringer.delete(b.id);
+    if (b.telefon) {
+      const liste = await hentSlettede();
+      liste.push({ telefon: b.telefon, dato: b.dato, navn: b.navn });
+      await db.meta.put({ nokkel: 'slettede', verdi: liste });
+    }
+  });
+}
+
 export async function posterFor(befaringId: string): Promise<Post[]> {
   return (await db.poster.where('befaringId').equals(befaringId).toArray()).sort((a, b) => a.rekkefolge - b.rekkefolge);
 }

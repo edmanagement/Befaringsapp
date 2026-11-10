@@ -140,6 +140,13 @@ textarea.inn { min-height: 160px; resize: vertical; }
   border-radius: var(--radius); border: 2px solid var(--kant); background: var(--flate);
   margin-bottom: 10px; color: var(--tekst); text-decoration: none; cursor: pointer;
 }
+.kort-ramme { position: relative; }
+.kort-ramme .kort { padding-right: 56px; }
+.kort-slett {
+  position: absolute; top: 8px; right: 8px; z-index: 1; width: 44px; height: 44px; border-radius: 99px;
+  border: none; background: transparent; color: var(--tekst-2); font-size: 20px; cursor: pointer;
+}
+.kort-slett:active { background: var(--flate-2); color: #e5484d; }
 .kort .navn { font-size: 21px; font-weight: 700; }
 .kort .linje { font-size: 16px; color: var(--tekst-2); margin-top: 2px; }
 .merke {

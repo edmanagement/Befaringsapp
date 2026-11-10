@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { lesImport } from '../db/import';
 import type { Gaa } from '../App';
-import { db, status } from '../db/db';
+import { db, hentSlettede, slettBefaring, status } from '../db/db';
 import type { Befaring, Status } from '../motor/typer';
 import { datoTekst, lesDato } from '../tekst';
 import { Logo, Topp } from '../ui';
@@ -19,10 +19,11 @@ export function Liste({ gaa }: { gaa: Gaa }) {
     if (!f) return;
     try {
       const eks = await db.befaringer.toArray();
-      const r = lesImport(await f.text(), eks);
+      const r = lesImport(await f.text(), eks, await hentSlettede());
       await db.befaringer.bulkAdd(r.nye);
       setMelding(`Importert ${r.nye.length} befaring${r.nye.length === 1 ? '' : 'er'}.` +
-        (r.duplikater ? ` ${r.duplikater} fantes fra før.` : '') + (r.ugyldige ? ` ${r.ugyldige} rader manglet navn og telefon.` : ''));
+        (r.duplikater ? ` ${r.duplikater} fantes fra før.` : '') +
+        (r.avsluttet ? ` ${r.avsluttet} er gjennomført eller slettet.` : '') + (r.ugyldige ? ` ${r.ugyldige} rader manglet navn og telefon.` : ''));
       setFane('kommende');
       setTeller((x) => x + 1);
     } catch (e) {
@@ -43,6 +44,13 @@ export function Liste({ gaa }: { gaa: Gaa }) {
       setRader(ut);
     })();
   }, [teller]);
+
+  async function slett(b: Befaring) {
+    if (!confirm(`Slette befaringen «${b.navn || 'Uten navn'}»?\n\nPoster og bilder slettes fra telefonen. Den kommer ikke tilbake ved import.`)) return;
+    await slettBefaring(b);
+    setMelding(`«${b.navn || 'Uten navn'}» er slettet.`);
+    setTeller((x) => x + 1);
+  }
 
   if (!rader) return null;
   const tid = (b: Befaring) => lesDato(b.dato)?.getTime() ?? Number.MAX_SAFE_INTEGER;
@@ -77,19 +85,19 @@ export function Liste({ gaa }: { gaa: Gaa }) {
 
       {fane === 'kommende' && (
         <>
-          {kommende.map((r) => <Kort key={r.b.id} r={r} gaa={gaa} />)}
+          {kommende.map((r) => <Kort key={r.b.id} r={r} gaa={gaa} slett={slett} />)}
           {!aktive.length && <p className="liten midt">Ingen bookede befaringer. Trykk «Ny befaring».</p>}
           {passert.length > 0 && (
             <>
               <h3>Passert dato, ikke fullført</h3>
-              {passert.map((r) => <Kort key={r.b.id} r={r} gaa={gaa} />)}
+              {passert.map((r) => <Kort key={r.b.id} r={r} gaa={gaa} slett={slett} />)}
             </>
           )}
         </>
       )}
       {fane === 'gjennomfort' && (
         <>
-          {ferdige.map((r) => <Kort key={r.b.id} r={r} gaa={gaa} />)}
+          {ferdige.map((r) => <Kort key={r.b.id} r={r} gaa={gaa} slett={slett} />)}
           {!ferdige.length && <p className="liten midt">Ingen gjennomførte befaringer ennå.</p>}
         </>
       )}
@@ -97,9 +105,11 @@ export function Liste({ gaa }: { gaa: Gaa }) {
   );
 }
 
-function Kort({ r, gaa }: { r: Rad; gaa: Gaa }) {
+function Kort({ r, gaa, slett }: { r: Rad; gaa: Gaa; slett: (b: Befaring) => void }) {
   const klasse = r.st === 'endret etter eksport' ? 'endret' : r.st;
   return (
+    <div className="kort-ramme">
+    <button className="kort-slett" onClick={() => slett(r.b)} aria-label={`Slett ${r.b.navn}`}>✕</button>
     <button className="kort" onClick={() => gaa({ side: 'befaring', id: r.b.id })}>
       <div className="linje">{datoTekst(r.b.dato)}</div>
       <div className="navn">{r.b.navn || 'Uten navn'}</div>
@@ -107,5 +117,6 @@ function Kort({ r, gaa }: { r: Rad; gaa: Gaa }) {
       {r.b.produktinteresse.length > 0 && <div className="linje">{r.b.produktinteresse.join(', ')}</div>}
       <span className={`merke ${klasse}`}>{r.st}{r.antall ? ` · ${r.antall} poster` : ''}</span>
     </button>
+    </div>
   );
 }

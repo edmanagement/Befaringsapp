@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Gaa } from '../App';
-import { db, lagreBefaring, lagrePost, nyPost, posterFor, slettPost, status } from '../db/db';
+import { db, lagreBefaring, lagrePost, nyPost, posterFor, slettBefaring, slettPost, status } from '../db/db';
 import type { Befaring, Post } from '../motor/typer';
 import { lagKontekst, mangler } from '../motor/motor';
 import { finnProdukt } from '../produkter';
@@ -154,6 +154,11 @@ export function BefaringSide({ gaa, id }: { gaa: Gaa; id: string }) {
           )
         )}
         <button className="knapp lav" onClick={zip} disabled={!!jobber || !poster.length}>Last ned som zip (reserve)</button>
+        <button className="knapp lav fare" onClick={async () => {
+          if (!confirm(`Slette hele befaringen «${b.navn || 'Uten navn'}»?\n\nPoster og bilder slettes fra telefonen (ikke fra Dropbox). Den kommer ikke tilbake ved import.`)) return;
+          await slettBefaring(b);
+          gaa({ side: 'liste' });
+        }}>Slett befaring</button>
       </div>
     </div>
   );
